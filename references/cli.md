@@ -452,3 +452,5 @@ repeat `--palette` to check multiple entries.
 | `skill --add` | Install this skill. |
 
 # keep the directory layout explicit
+
+# layout kept explicit
