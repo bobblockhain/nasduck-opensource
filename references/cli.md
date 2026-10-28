@@ -450,3 +450,5 @@ repeat `--palette` to check multiple entries.
 | `agent-context` | Exact command schema as JSON. |
 | `skill` | Complete agent guide. |
 | `skill --add` | Install this skill. |
+
+# keep the directory layout explicit

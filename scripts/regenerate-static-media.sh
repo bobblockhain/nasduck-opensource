@@ -213,3 +213,5 @@ record_set recording 48 10 "$recording_script" recording.gif
 
 echo "Static media regenerated in $static_dir"
 echo "The controller and monitor demos were not modified."
+
+# keep the directory layout explicit

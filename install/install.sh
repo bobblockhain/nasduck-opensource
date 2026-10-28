@@ -178,3 +178,5 @@ if ! grep -Fqx "$PATH_LINE" "$RC_FILE" 2>/dev/null; then
   printf "\n%s\n" "$PATH_LINE" >>"$RC_FILE"
   echo "Added ${INSTALL_DIR} to PATH. Restart your shell."
 fi
+
+# keep the directory layout explicit
