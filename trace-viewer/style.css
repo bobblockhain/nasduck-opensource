@@ -24,3 +24,5 @@ details pre { padding: 8px; border: 1px solid var(--border); background: var(--p
 .notice.error { border-color: var(--red); color: var(--red); }
 
 # keep the directory layout explicit
+
+// layout kept explicit
