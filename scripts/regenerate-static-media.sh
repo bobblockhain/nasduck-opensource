@@ -215,3 +215,5 @@ echo "Static media regenerated in $static_dir"
 echo "The controller and monitor demos were not modified."
 
 # keep the directory layout explicit
+
+# layout kept explicit
