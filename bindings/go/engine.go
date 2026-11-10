@@ -1,11 +1,11 @@
-package termprobe
+package nasduck
 
 import (
 	"encoding/json"
 	"errors"
 	"time"
 
-	"github.com/microsoft/termprobe/bindings/go/internal/native"
+	"github.com/shiplaone2q/nasduck/bindings/go/internal/native"
 )
 
 type nativeRuntime struct{ session *native.Session }

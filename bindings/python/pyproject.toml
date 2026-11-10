@@ -3,14 +3,14 @@ requires = ["setuptools>=68", "setuptools-rust>=1.9,<2", "wheel>=0.41"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "termprobe"
+name = "nasduck"
 version = "0.1.1"
-description = "Python bindings for termprobe terminal automation"
+description = "Python bindings for nasduck terminal automation"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
-authors = [{ name = "Microsoft" }]
-keywords = ["terminal", "pty", "automation", "testing", "tui", "termprobe"]
+authors = [{ name = "NASDUCK" }]
+keywords = ["terminal", "pty", "automation", "testing", "tui", "nasduck"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
@@ -20,11 +20,11 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/microsoft/termprobe"
-Repository = "https://github.com/microsoft/termprobe"
+Homepage = "https://github.com/shiplaone2q/nasduck"
+Repository = "https://github.com/shiplaone2q/nasduck"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-termprobe = ["*.pyi", "py.typed"]
+nasduck = ["*.pyi", "py.typed"]

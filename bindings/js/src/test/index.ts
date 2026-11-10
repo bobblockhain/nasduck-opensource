@@ -1,4 +1,4 @@
-import { Termprobe } from "../client.js";
+import { Nasduck } from "../client.js";
 import { IS_MACOS, IS_WINDOWS } from "../config.js";
 import { uniqueSession } from "../ephemeral.js";
 import { UsageError } from "../errors.js";
@@ -15,7 +15,7 @@ import type {
 } from "../types.js";
 
 export type { Profile, Shell } from "../types.js";
-export { Termprobe } from "../client.js";
+export { Nasduck } from "../client.js";
 
 export interface CreateTerminalOptions {
   backend?: Backend;
@@ -47,7 +47,7 @@ export function resetTerminalDefaults(): void {
   defaults = {};
 }
 
-const tracked = new Set<Termprobe>();
+const tracked = new Set<Nasduck>();
 let safetyNetInstalled = false;
 
 function installSafetyNet(): void {
@@ -62,12 +62,12 @@ function installSafetyNet(): void {
   });
 }
 
-export function trackTerminal(terminal: Termprobe): void {
+export function trackTerminal(terminal: Nasduck): void {
   tracked.add(terminal);
   installSafetyNet();
 }
 
-export function untrackTerminal(terminal: Termprobe): void {
+export function untrackTerminal(terminal: Nasduck): void {
   tracked.delete(terminal);
 }
 
@@ -113,10 +113,10 @@ function spawnOptions(opts: CreateTerminalOptions): SpawnOptions {
 
 export async function createTerminal(
   options: CreateTerminalOptions = {},
-): Promise<Termprobe> {
+): Promise<Nasduck> {
   const opts: CreateTerminalOptions = { ...defaults, ...options };
   const session = opts.session ?? uniqueSession(opts.prefix);
-  const terminal = new Termprobe(session, clientOptions(opts));
+  const terminal = new Nasduck(session, clientOptions(opts));
   trackTerminal(terminal);
   const spawn = spawnOptions(opts);
   try {
@@ -138,7 +138,7 @@ export async function createTerminal(
 
 export async function withTerminal<T>(
   options: CreateTerminalOptions,
-  fn: (terminal: Termprobe) => Promise<T> | T,
+  fn: (terminal: Nasduck) => Promise<T> | T,
 ): Promise<T> {
   const terminal = await createTerminal(options);
   try {

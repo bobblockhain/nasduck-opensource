@@ -5,8 +5,8 @@ import threading
 import unittest
 from unittest.mock import Mock, patch
 
-from tui_test import _abi as abi
-from tui_test import _native as native
+from nasduck import _abi as abi
+from nasduck import _native as native
 
 
 class OwnershipTests(unittest.TestCase):
@@ -70,7 +70,7 @@ class OwnershipTests(unittest.TestCase):
         with patch.object(native, "_load", return_value=library):
             with self.assertRaises(native.NativeAssertionError) as caught:
                 native._invoke("expect_locator", ())
-        envelope = json.loads(caught.exception._tui_test_error_json)
+        envelope = json.loads(caught.exception._nasduck_error_json)
         self.assertEqual(envelope["details"], {"reason": "timeout"})
         self.assertEqual(envelope["artifact"], {"directory": "artifacts"})
         library.tui_result_free.assert_called_once()

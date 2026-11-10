@@ -49,21 +49,21 @@ bash .github/scripts/release/prepare-linux.sh
 cargo install --locked --version 0.23.4 cargo-zigbuild
 profile=()
 if [[ "$2" == release ]]; then profile=(--release); fi
-CARGO_TARGET_DIR=/io/target/manylinux cargo zigbuild --locked -p termprobe-ffi --target "$1.2.28" "\${profile[@]}"
+CARGO_TARGET_DIR=/io/target/manylinux cargo zigbuild --locked -p nasduck-ffi --target "$1.2.28" "\${profile[@]}"
 mkdir -p "target/$1/$2"
-cp "target/manylinux/$1/$2/libtermprobe_ffi.so" "target/$1/$2/"
+cp "target/manylinux/$1/$2/libnasduck_ffi.so" "target/$1/$2/"
 `, "--", target, debug ? "debug" : "release",
   ], { cwd: root, env, stdio: "inherit" });
 } else {
   execFileSync("cargo", [
-    zigbuild ? "zigbuild" : "build", "--locked", "-p", "termprobe-ffi",
+    zigbuild ? "zigbuild" : "build", "--locked", "-p", "nasduck-ffi",
     ...(debug ? [] : ["--release"]),
     ...(explicitTarget || zigbuild ? ["--target", target] : []),
   ], { cwd: root, env, stdio: "inherit" });
 }
 
 const extension = target.includes("windows") ? "dll" : target.includes("apple") ? "dylib" : "so";
-const library = extension === "dll" ? "termprobe_ffi.dll" : `libtermprobe_ffi.${extension}`;
+const library = extension === "dll" ? "nasduck_ffi.dll" : `libnasduck_ffi.${extension}`;
 const output = join(root, "target", ...(explicitTarget || zigbuild ? [target] : []), debug ? "debug" : "release", library);
 mkdirSync(join(directory, "native"), { recursive: true });
-copyFileSync(output, join(directory, "native", `termprobe.${tag}.${extension}`));
+copyFileSync(output, join(directory, "native", `nasduck.${tag}.${extension}`));

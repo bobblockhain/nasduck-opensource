@@ -19,8 +19,8 @@ export function releaseMetadata(root) {
 }
 
 export function libraryName(target) {
-  return target.includes("windows") ? "termprobe_ffi.dll"
-    : target.includes("apple") ? "libtermprobe_ffi.dylib" : "libtermprobe_ffi.so";
+  return target.includes("windows") ? "nasduck_ffi.dll"
+    : target.includes("apple") ? "libnasduck_ffi.dylib" : "libnasduck_ffi.so";
 }
 
 export function sha256(data) {
@@ -66,7 +66,7 @@ export function writeArchive(filename, entries) {
 }
 
 export function nativeFilename(version, target) {
-  return `termprobe-native-${version}-${target}.tar.gz`;
+  return `nasduck-native-${version}-${target}.tar.gz`;
 }
 
 export async function readArchive(data) {
@@ -257,7 +257,7 @@ async function main() {
       fs.mkdirSync(path.dirname(filename), { recursive: true });
       fs.writeFileSync(filename, data);
     }
-    const archive = path.join(path.dirname(output), `termprobe-go-${version}.tar.gz`);
+    const archive = path.join(path.dirname(output), `nasduck-go-${version}.tar.gz`);
     writeArchive(archive, entries);
     console.log(output);
     console.log(archive);

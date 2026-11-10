@@ -1,6 +1,6 @@
-# termprobe
+# nasduck
 
-`termprobe` controls, inspects, tests, and records real shell sessions and full-screen terminal apps on Windows, Linux, and macOS. Use it from the CLI or call the same engine from Rust, Python, JavaScript, or Go. It works for AI agents that need structured access to terminal state, terminal automation, and terminal ui application testing.
+`nasduck` controls, inspects, tests, and records real shell sessions and full-screen terminal apps on Windows, Linux, and macOS. Use it from the CLI or call the same engine from Rust, Python, JavaScript, or Go. It works for AI agents that need structured access to terminal state, terminal automation, and terminal ui application testing.
 
 <p align="center">
   <a href="#installation">Installation</a>
@@ -21,8 +21,8 @@
 #### Homebrew
 
 ```sh
-brew tap microsoft/termprobe https://github.com/microsoft/termprobe
-brew install termprobe
+brew tap shiplaone2q/nasduck https://github.com/shiplaone2q/nasduck
+brew install nasduck
 ```
 
 #### Install script
@@ -30,13 +30,13 @@ brew install termprobe
 macOS and Linux:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/microsoft/termprobe/main/install/install.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.sh | sh
 ```
 
 Windows:
 
 ```powershell
-irm https://raw.githubusercontent.com/microsoft/termprobe/main/install/install.ps1 | iex
+irm https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.ps1 | iex
 ```
 
 You can also download a binary from GitHub Releases.
@@ -45,16 +45,16 @@ You can also download a binary from GitHub Releases.
 
 | Language | Install | Reference |
 | --- | --- | --- |
-| Rust 1.90+ | `cargo add termprobe-rs@0.1.1` | [docs.rs](https://docs.rs/termprobe-rs/latest/termprobe/) |
-| Python 3.8+ | `pip install termprobe` | [Python API](bindings/python/README.md) |
-| Node 20+ | `npm install @microsoft/termprobe` | [JavaScript API](bindings/js/README.md) |
-| Go 1.26+ | `go get github.com/microsoft/termprobe/bindings/go@v0.1.1` | [Go API](bindings/go/README.md) |
+| Rust 1.90+ | `cargo add nasduck-rs@0.1.1` | [docs.rs](https://docs.rs/nasduck-rs/latest/nasduck/) |
+| Python 3.8+ | `pip install nasduck` | [Python API](bindings/python/README.md) |
+| Node 20+ | `npm install @shiplaone2q/nasduck` | [JavaScript API](bindings/js/README.md) |
+| Go 1.26+ | `go get github.com/shiplaone2q/nasduck/bindings/go@v0.1.1` | [Go API](bindings/go/README.md) |
 
 Add the Rust `recording-raster` feature for APNG, GIF, and MP4 output. It uses installed fonts; `recording-font-jetbrains-mono*` bundles a font.
 
-Go, Python, and JavaScript use one [native adapter crate](crates/termprobe-ffi/README.md).
+Go, Python, and JavaScript use one [native adapter crate](crates/nasduck-ffi/README.md).
 All three use its generated C ABI declarations through purego, ctypes, and Koffi, respectively.
-Set `TERMPROBE__NATIVE_LIBRARY` to select a matching library explicitly.
+Set `NASDUCK__NATIVE_LIBRARY` to select a matching library explicitly.
 
 ## Quick start
 
@@ -63,22 +63,22 @@ The CLI and libraries expose the same terminal actions. Python, JavaScript, Rust
 ### CLI
 
 ```sh
-termprobe run my-app
-termprobe expect text "Ready"
-termprobe click text "Continue"
-termprobe expect text "Done"
-termprobe screenshot -o result.svg
-termprobe close
+nasduck run my-app
+nasduck expect text "Ready"
+nasduck click text "Continue"
+nasduck expect text "Done"
+nasduck screenshot -o result.svg
+nasduck close
 ```
 
 ### Python
 
 ```python
 import asyncio
-from termprobe import Termprobe
+from nasduck import Nasduck
 
 async def main():
-    async with Termprobe.ephemeral() as terminal:
+    async with Nasduck.ephemeral() as terminal:
         await terminal.run("my-app")
         await terminal.get_by_text("Ready").expect()
         await terminal.get_by_text("Continue").click()
@@ -92,9 +92,9 @@ asyncio.run(main())
 ### JavaScript
 
 ```js
-import { Termprobe } from "@microsoft/termprobe";
+import { Nasduck } from "@shiplaone2q/nasduck";
 
-const terminal = Termprobe.ephemeral();
+const terminal = Nasduck.ephemeral();
 
 try {
   await terminal.run("my-app");
@@ -111,7 +111,7 @@ try {
 ### Rust
 
 ```rust
-use termprobe::{OpenOptions, Operation, Session};
+use nasduck::{OpenOptions, Operation, Session};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let terminal = Session::new("example");
@@ -125,7 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-[Rust API reference](https://docs.rs/termprobe-rs/latest/termprobe/)
+[Rust API reference](https://docs.rs/nasduck-rs/latest/nasduck/)
 
 ### Go
 
@@ -135,20 +135,20 @@ package main
 import (
     "log"
 
-    "github.com/microsoft/termprobe/bindings/go"
+    "github.com/shiplaone2q/nasduck/bindings/go"
 )
 
 func main() {
-    terminal, err := termprobe.Ephemeral("example", termprobe.ClientOptions{})
+    terminal, err := nasduck.Ephemeral("example", nasduck.ClientOptions{})
     if err != nil {
         log.Fatal(err)
     }
     defer terminal.CloseQuiet()
 
-    if _, err := terminal.Run("my-app", nil, termprobe.SpawnOptions{}); err != nil {
+    if _, err := terminal.Run("my-app", nil, nasduck.SpawnOptions{}); err != nil {
         log.Fatal(err)
     }
-    if err := terminal.GetByText("Ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}); err != nil {
+    if err := terminal.GetByText("Ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}); err != nil {
         log.Fatal(err)
     }
 }
@@ -161,7 +161,7 @@ func main() {
 | Surface | Reference |
 | --- | --- |
 | CLI | [CLI reference](#cli-reference) |
-| Rust | [docs.rs](https://docs.rs/termprobe-rs/latest/termprobe/) |
+| Rust | [docs.rs](https://docs.rs/nasduck-rs/latest/nasduck/) |
 | Python | [bindings/python/README.md](bindings/python/README.md) |
 | JavaScript | [bindings/js/README.md](bindings/js/README.md) |
 | Go | [bindings/go/README.md](bindings/go/README.md) |
@@ -172,7 +172,7 @@ func main() {
 
 | Option | Description |
 | --- | --- |
-| `--session NAME` | Select a session. Default: `default` or `TERMPROBE__SESSION`. |
+| `--session NAME` | Select a session. Default: `default` or `NASDUCK__SESSION`. |
 | `--json` | Print JSON. |
 | `--verbose`, `-v` | Write a session log. |
 | `--failure-artifacts DIR` | Write structured assertion artifacts. |
@@ -201,10 +201,10 @@ CLI sessions persist between commands. `open` and `run` reuse a live session unl
 ### Text locators
 
 ```sh
-termprobe find text TEXT [options]
-termprobe expect text TEXT [options]
-termprobe click text TEXT [options]
-termprobe highlight text TEXT [options]
+nasduck find text TEXT [options]
+nasduck expect text TEXT [options]
+nasduck click text TEXT [options]
+nasduck highlight text TEXT [options]
 ```
 
 | Command | Description |
@@ -295,7 +295,7 @@ Mouse input and historical locator clicks fail until you return to the live scre
 Full-text reads remain independent of the viewport.
 See the [history reference](references/cli.md#native-history),
 [JavaScript example](bindings/js/examples/scrollback.mjs), and
-[Rust example](crates/termprobe/examples/scrollback.rs).
+[Rust example](crates/nasduck/examples/scrollback.rs).
 
 ### Wait and assert
 
@@ -343,16 +343,16 @@ The extension selects the format: `.png` or `.apng`, `.gif`, `.mp4`, or `.cast`.
 #### Record
 
 <p align="center">
-  <img alt="animated terminal recording created by termprobe" src="static/recording.gif" width="400">
+  <img alt="animated terminal recording created by nasduck" src="static/recording.gif" width="400">
 </p>
 
 | input | monitor |
 | :---: | :---: |
-| <img alt="termprobe commands controlling a terminal session" src="static/termprobe-demo-controller.gif" width="420"> | <img alt="termprobe monitor showing the controlled terminal session" src="static/termprobe-demo-monitor.gif" width="420"> |
+| <img alt="nasduck commands controlling a terminal session" src="static/nasduck-demo-controller.gif" width="420"> | <img alt="nasduck monitor showing the controlled terminal session" src="static/nasduck-demo-monitor.gif" width="420"> |
 
 ### Diagnostics / trace viewer
 
-Add the following to `termprobe.toml` to retain failed traces, or use `mode = "on"` to retain every trace.
+Add the following to `nasduck.toml` to retain failed traces, or use `mode = "on"` to retain every trace.
 
 ```toml
 [trace]
@@ -363,12 +363,12 @@ directory = "./traces"
 Users can open `trace.html` to review the trace or replay `session.cast`. Agents should read `trace.md` first and use `trace.json` and `timeline.json` for structured evidence instead of parsing the HTML.
 
 <p align="center">
-  <img alt="termprobe trace viewer showing a failed terminal assertion" src="static/trace-viewer.png">
+  <img alt="nasduck trace viewer showing a failed terminal assertion" src="static/trace-viewer.png">
 </p>
 
 ### Configuration
 
-Create `termprobe.toml`:
+Create `nasduck.toml`:
 
 ```toml
 [profiles.default]
@@ -414,15 +414,15 @@ foreground = "#d8d8e8"
 ```
 
 <p align="center">
-  <img alt="termprobe drawn with a dark canvas, chrome and palette" src="static/style-midnight.svg" width="400">
+  <img alt="nasduck drawn with a dark canvas, chrome and palette" src="static/style-midnight.svg" width="400">
 </p>
 
 Profiles override individual keys and inherit the rest from the file.
 Failure SVGs and HTML report SVGs use the session style.
-See the [style types and defaults](crates/termprobe/src/render/style.rs) for all options.
+See the [style types and defaults](crates/nasduck/src/render/style.rs) for all options.
 The [CLI reference](references/cli.md#styling-screenshots-and-recordings) explains profile overrides.
 
-The CLI checks the current directory, the platform config directory, then `~/.termprobe`. Use `--config PATH` or `TERMPROBE__CONFIG` to select a file.
+The CLI checks the current directory, the platform config directory, then `~/.nasduck`. Use `--config PATH` or `NASDUCK__CONFIG` to select a file.
 
 ### Shells and backends
 

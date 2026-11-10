@@ -5,25 +5,25 @@
 ## Run a command
 
 ```sh
-termprobe open
-termprobe submit "npm test"
-termprobe wait command
-termprobe expect exit-code 0
+nasduck open
+nasduck submit "npm test"
+nasduck wait command
+nasduck expect exit-code 0
 ```
 
 ## Drive an app
 
 ```sh
-termprobe run my-app
-termprobe expect text "Ready"
-termprobe click text "Continue"
-termprobe expect text "Done"
+nasduck run my-app
+nasduck expect text "Ready"
+nasduck click text "Continue"
+nasduck expect text "Done"
 ```
 
 ## Match relative text
 
 ```sh
-termprobe click text "Save" --after-text "Settings" --match unique
+nasduck click text "Save" --after-text "Settings" --match unique
 ```
 
 ```python
@@ -56,7 +56,7 @@ await terminal.get_by_text("Ready").expect()
 ## Click with modifiers
 
 ```sh
-termprobe click text "Open" --button right --ctrl
+nasduck click text "Open" --button right --ctrl
 ```
 
 ```python
@@ -80,13 +80,13 @@ await terminal.waitClipboard(/copied/i);
 ## Keep failure artifacts
 
 ```sh
-termprobe --failure-artifacts artifacts/failures \
+nasduck --failure-artifacts artifacts/failures \
   --failure-artifact-recording \
   expect text "Ready" --timeout 5000
 ```
 
 ```python
-terminal = Termprobe(
+terminal = Nasduck(
     artifacts={
         "dir": "artifacts/failures",
         "on_failure": "all",
@@ -97,7 +97,7 @@ terminal = Termprobe(
 ```
 
 ```js
-const terminal = new Termprobe("test", {
+const terminal = new Nasduck("test", {
   artifacts: {
     dir: "artifacts/failures",
     onFailure: "all",

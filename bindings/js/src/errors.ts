@@ -5,7 +5,7 @@ import type {
 
 export type ErrorKind = "assertion" | "usage" | "no_session" | "internal";
 
-export class TermprobeError extends Error {
+export class NasduckError extends Error {
   readonly kind: ErrorKind;
   readonly exitCode: number;
   readonly details?: FailureDetails;
@@ -19,31 +19,31 @@ export class TermprobeError extends Error {
   }
 }
 
-export class ExpectationError extends TermprobeError {
+export class ExpectationError extends NasduckError {
   constructor(message: string) {
     super(message, "assertion", 1);
   }
 }
 
-export class UsageError extends TermprobeError {
+export class UsageError extends NasduckError {
   constructor(message: string) {
     super(message, "usage", 2);
   }
 }
 
-export class NoSessionError extends TermprobeError {
+export class NoSessionError extends NasduckError {
   constructor(message: string) {
     super(message, "no_session", 3);
   }
 }
 
-export class InternalError extends TermprobeError {
+export class InternalError extends NasduckError {
   constructor(message: string) {
     super(message, "internal", 5);
   }
 }
 
-export function makeError(kind: ErrorKind, message: string): TermprobeError {
+export function makeError(kind: ErrorKind, message: string): NasduckError {
   switch (kind) {
     case "assertion":
       return new ExpectationError(message);

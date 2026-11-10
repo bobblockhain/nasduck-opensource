@@ -11,7 +11,7 @@ import {
   ExpectationError,
   InternalError,
   NoSessionError,
-  Termprobe,
+  Nasduck,
   UsageError,
   closeAll,
   getRecording,
@@ -82,7 +82,7 @@ test("echo roundtrip drives a real session", async () => {
 });
 
 test("restart recreates a named session with an open result", async () => {
-  const su = new Termprobe(uniqueSession("restart-binding"));
+  const su = new Nasduck(uniqueSession("restart-binding"));
   try {
     const opened = await su.run(process.execPath, evalArgs);
     await su.getByText("ready").wait({ timeout: 2000 });
@@ -101,7 +101,7 @@ test("restart recreates a named session with an open result", async () => {
 });
 
 test("invalid open and run options with retries preserve the existing session", async () => {
-  const terminal = new Termprobe(uniqueSession("invalid-spawn-preserves"));
+  const terminal = new Nasduck(uniqueSession("invalid-spawn-preserves"));
   try {
     const opened = await terminal.run(process.execPath, evalArgs);
     await terminal.getByText("ready").wait({ timeout: 5000 });
@@ -127,7 +127,7 @@ test("worker exit leaves terminals owned by the main thread open", {
   skip: !!process.versions.bun || typeof globalThis.Deno !== "undefined",
   timeout: 20_000,
 }, async (t) => {
-  const terminal = new Termprobe(uniqueSession("worker-owner"));
+  const terminal = new Nasduck(uniqueSession("worker-owner"));
   try {
     await terminal.run(process.execPath, evalArgs);
     await terminal.getByText("ready").wait({ timeout: 5000 });
@@ -138,7 +138,7 @@ test("worker exit leaves terminals owned by the main thread open", {
         (async () => {
           const sdk = await import(workerData.url);
           assert.ok((await sdk.sessions()).includes(workerData.session));
-          const terminal = new sdk.Termprobe(workerData.session);
+          const terminal = new sdk.Nasduck(workerData.session);
           assert.deepEqual(await terminal.getSize(), { cols: 80, rows: 30 });
           const reads = Array.from({ length: 300 }, () => terminal.getSize());
           if (workerData.explicitExit) process.exit(0);
@@ -164,8 +164,8 @@ test("worker exit leaves terminals owned by the main thread open", {
 });
 
 test("restart preserves failure-artifact recording without trace options", async () => {
-  const root = mkdtempSync(join(tmpdir(), "termprobe-restart-artifacts-"));
-  const su = new Termprobe(uniqueSession("restart-artifacts"), {
+  const root = mkdtempSync(join(tmpdir(), "nasduck-restart-artifacts-"));
+  const su = new Nasduck(uniqueSession("restart-artifacts"), {
     artifacts: { dir: root, onFailure: "text", includeRecording: true },
   });
   try {
@@ -188,7 +188,7 @@ test("restart preserves failure-artifact recording without trace options", async
 });
 
 test("bell state, waits, and expectations stay consistent", async () => {
-  const su = Termprobe.ephemeral("bell-events");
+  const su = Nasduck.ephemeral("bell-events");
 
   try {
     await su.open({ shell });
@@ -281,7 +281,7 @@ test("clipboard getter and change wait stay consistent", async () => {
 });
 
 test("xterm.js clipboard rejects as InternalError", async () => {
-  const su = new Termprobe(uniqueSession("xtermjs-clipboard"), {
+  const su = new Nasduck(uniqueSession("xtermjs-clipboard"), {
     backend: "xtermjs",
   });
   try {
@@ -297,7 +297,7 @@ test("xterm.js clipboard rejects as InternalError", async () => {
 });
 
 test("recording API writes an asciicast file", async () => {
-  const root = mkdtempSync(join(tmpdir(), "termprobe-recording-"));
+  const root = mkdtempSync(join(tmpdir(), "nasduck-recording-"));
   const path = join(root, "demo.cast");
   try {
     await withTerminal({ shell }, async (su) => {
@@ -320,15 +320,15 @@ test("recording API writes an asciicast file", async () => {
 });
 
 test("trace retention and recording directory are configurable", async () => {
-  const root = mkdtempSync(join(tmpdir(), "termprobe-auto-recording-"));
-  const disabled = new Termprobe(uniqueSession("recording-disabled"), {
+  const root = mkdtempSync(join(tmpdir(), "nasduck-auto-recording-"));
+  const disabled = new Nasduck(uniqueSession("recording-disabled"), {
     recording: { directory: root },
     trace: { mode: "off", directory: join(root, "traces") },
   });
   assert.equal((await disabled.open({ shell, waitReady: false })).recording, "");
   await disabled.close();
 
-  const always = new Termprobe(uniqueSession("recording-always"), {
+  const always = new Nasduck(uniqueSession("recording-always"), {
     recording: { directory: root },
     trace: { mode: "on", directory: join(root, "traces") },
   });
@@ -340,9 +340,9 @@ test("trace retention and recording directory are configurable", async () => {
 });
 
 test("failed open recording is readable before close", async () => {
-  const root = mkdtempSync(join(tmpdir(), "termprobe-failed-open-"));
+  const root = mkdtempSync(join(tmpdir(), "nasduck-failed-open-"));
   const name = uniqueSession("recording-failed-open");
-  const su = new Termprobe(name, {
+  const su = new Nasduck(name, {
     recording: { directory: root },
     trace: { mode: "on-failure", directory: join(root, "traces") },
   });
@@ -360,7 +360,7 @@ test("failed open recording is readable before close", async () => {
 });
 
 test("recording API exports styled Unicode to APNG and GIF", async () => {
-  const root = mkdtempSync(join(tmpdir(), "termprobe-raster-recording-"));
+  const root = mkdtempSync(join(tmpdir(), "nasduck-raster-recording-"));
   const command =
     process.platform === "win32"
       ? 'Write-Host "`e[1;3mstyled-é`e[0m"'
@@ -464,7 +464,7 @@ test("a blocking native wait runs off the JS event loop", async () => {
 
 test("repeated direct runtime exits retain their nonzero status", async () => {
   for (let index = 0; index < 20; index += 1) {
-    const su = Termprobe.ephemeral(`direct-nonzero-${index}`);
+    const su = Nasduck.ephemeral(`direct-nonzero-${index}`);
     try {
       await su.run(process.execPath, nonzeroExitArgs);
       await su.waitExit({ timeout: 5000 });
@@ -476,10 +476,10 @@ test("repeated direct runtime exits retain their nonzero status", async () => {
 });
 
 test("concurrent waits do not starve filesystem work", async () => {
-  const root = mkdtempSync(join(tmpdir(), "termprobe-pool-"));
+  const root = mkdtempSync(join(tmpdir(), "nasduck-pool-"));
   const terminals = Array.from(
     { length: 6 },
-    (_, index) => Termprobe.ephemeral(`pool-${index}`),
+    (_, index) => Nasduck.ephemeral(`pool-${index}`),
   );
   try {
     await Promise.all(
@@ -513,8 +513,8 @@ test("concurrent waits do not starve filesystem work", async () => {
 
 test("same-name clients share one serialized native session", async () => {
   const name = uniqueSession("same-name");
-  const first = new Termprobe(name);
-  const second = new Termprobe(name);
+  const first = new Nasduck(name);
+  const second = new Nasduck(name);
   try {
     await first.open({ shell });
     await second.submit("echo shared-native-session");
@@ -531,7 +531,7 @@ test("same-name clients share one serialized native session", async () => {
 });
 
 test("abandoning a raced promise keeps later operations serialized and safe", async () => {
-  const su = new Termprobe(uniqueSession("promise-abandonment"));
+  const su = new Nasduck(uniqueSession("promise-abandonment"));
   try {
     await su.run(process.execPath, evalArgs);
     await su.getByText("ready").wait({ timeout: 2000 });
@@ -563,7 +563,7 @@ test("abandoning a raced promise keeps later operations serialized and safe", as
 
 test("private packed screens retain full UTF-8 logical rows and own their bytes", async () => {
   const name = uniqueSession("packed-screen");
-  const su = new Termprobe(name);
+  const su = new Nasduck(name);
   const runtime = new NativeRuntime(name);
   const script =
     "process.stdout.write('\\x1b[31mI\\x1b[0m🙂\\x1b[38;2;1;2;3mR\\x1b[0m\\n');" +
@@ -614,7 +614,7 @@ test("private packed screens retain full UTF-8 logical rows and own their bytes"
 });
 
 test("locators support scoped text matches and style assertions", async () => {
-  const su = new Termprobe(uniqueSession("text-locators"));
+  const su = new Nasduck(uniqueSession("text-locators"));
   const script =
     "process.stdout.write('Settings One\\n  Save\\nSettings Two\\n  Save\\n\\x1b[1mWarning\\x1b[0m\\n\\x1b[1mPart\\x1b[0mial\\n');" +
     "setInterval(() => {}, 1000)";
@@ -687,7 +687,7 @@ test("locators support scoped text matches and style assertions", async () => {
 
 test("nested text and style clicks retain their full query and resolved input", async () => {
   const program = "process.stdout.write('Review deployment\\r\\n\\x1b[36mView connection\\x1b[0m\\r\\nHelp: View connection\\r\\n'); setInterval(() => {}, 1000)";
-  const directory = mkdtempSync(join(tmpdir(), "termprobe-input-evidence-"));
+  const directory = mkdtempSync(join(tmpdir(), "nasduck-input-evidence-"));
   await withTerminal({
     program: [process.execPath, evalArgs[0], program],
     waitReady: false,
@@ -724,7 +724,7 @@ test("nested text and style clicks retain their full query and resolved input", 
 });
 
 test("get-by locators are lazy, chainable, and actionable", async () => {
-  const su = new Termprobe(uniqueSession("reusable-text-locators"));
+  const su = new Nasduck(uniqueSession("reusable-text-locators"));
   const script =
     typeof globalThis.Deno === "undefined"
       ? "setTimeout(() => process.stdout.write('item outside\\n\\x1b[1mitem item\\x1b[0m\\n'), 200); setInterval(() => {}, 1000)"
@@ -815,7 +815,7 @@ test("link locators compose cell sets and filter whole candidates", async () => 
   const output = `\x1b[1mA\x1b]8;;${uri}\x1b\\B\x1b[22mC\x1b]8;;\x1b\\\r\n` +
     `\x1b]8;;${uri}\x1b\\\x1b[1mA\x1b[22m \x1b[1mB\x1b[0m\x1b]8;;\x1b\\\r\n`;
   for (const backend of ["alacritty", "ghostty", "rio", "xtermjs"]) {
-    const su = new Termprobe(uniqueSession("link-composition"), { backend });
+    const su = new Nasduck(uniqueSession("link-composition"), { backend });
     try {
       const script = `setTimeout(() => process.stdout.write(${JSON.stringify(output)}), 150);setInterval(() => {}, 1000)`;
       await su.run(process.execPath, runtimeScript(script));
@@ -850,7 +850,7 @@ test("link locators compose cell sets and filter whole candidates", async () => 
 test("panic containment rejects as InternalError and Node keeps running", async () => {
   const name = uniqueSession("panic-probe");
   const runtime = new NativeRuntime(name);
-  const client = new Termprobe(name);
+  const client = new Nasduck(name);
   await assert.rejects(
     runtime.panicProbe(),
     (error) =>
@@ -868,7 +868,7 @@ test("panic containment rejects as InternalError and Node keeps running", async 
 });
 
 test("typed mouse and signal operations execute against a real program", async () => {
-  const su = new Termprobe(uniqueSession("typed-input-signal"));
+  const su = new Nasduck(uniqueSession("typed-input-signal"));
   try {
     await su.run(process.execPath, evalArgs);
     await su.getByText("ready").wait({ timeout: 2000 });
@@ -895,7 +895,7 @@ test("typed mouse and signal operations execute against a real program", async (
 });
 
 test("ghostty backend preserves blink", async () => {
-  const su = new Termprobe(uniqueSession("ghostty-blink"), {
+  const su = new Nasduck(uniqueSession("ghostty-blink"), {
     backend: "ghostty",
   });
   try {
@@ -913,8 +913,8 @@ test("ghostty backend preserves blink", async () => {
 
 test("closeAll interrupts in-flight waits and closes every process-local session", async () => {
   const terminals = [
-    new Termprobe(uniqueSession("close-all-a")),
-    new Termprobe(uniqueSession("close-all-b")),
+    new Nasduck(uniqueSession("close-all-a")),
+    new Nasduck(uniqueSession("close-all-b")),
   ];
   await Promise.all(terminals.map((terminal) => terminal.run(process.execPath, evalArgs)));
   await Promise.all(
@@ -944,7 +944,7 @@ test("closeAll interrupts in-flight waits and closes every process-local session
 });
 
 test("sessions lists an open session", async () => {
-  const su = new Termprobe(uniqueSession("nodetest"));
+  const su = new Nasduck(uniqueSession("nodetest"));
   await su.open({ shell });
   try {
     const names = await sessions();
@@ -956,8 +956,8 @@ test("sessions lists an open session", async () => {
 
 test("close evicts the session and retains its recording", async () => {
   const name = uniqueSession("recording");
-  const directory = mkdtempSync(join(tmpdir(), "termprobe-retained-trace-"));
-  const session = new Termprobe(name, { trace: { mode: "on", directory } });
+  const directory = mkdtempSync(join(tmpdir(), "nasduck-retained-trace-"));
+  const session = new Nasduck(name, { trace: { mode: "on", directory } });
   try {
     await session.open({ shell });
     await session.submit("echo retained-recording");
@@ -978,7 +978,7 @@ test("close evicts the session and retains its recording", async () => {
 });
 
 test("withTerminal retains traces according to the final test outcome", async () => {
-  const root = mkdtempSync(join(tmpdir(), "termprobe-trace-outcomes-"));
+  const root = mkdtempSync(join(tmpdir(), "nasduck-trace-outcomes-"));
   try {
     for (const [mode, failed] of [["on-failure", false], ["on-failure", true], ["on", false]]) {
       const directory = join(root, `${mode}-${failed}`);
@@ -1015,8 +1015,8 @@ test("withTerminal retains traces according to the final test outcome", async ()
 
 test("any shared handle can close a reopened named session", async () => {
   const name = uniqueSession("shared-close");
-  const first = new Termprobe(name);
-  const second = new Termprobe(name);
+  const first = new Nasduck(name);
+  const second = new Nasduck(name);
   try {
     await first.open({ shell });
     await first.close();
@@ -1029,7 +1029,7 @@ test("any shared handle can close a reopened named session", async () => {
 });
 
 test("snapshot lands in the client cwd", async () => {
-  const snapRoot = mkdtempSync(join(tmpdir(), "termprobe-snap-"));
+  const snapRoot = mkdtempSync(join(tmpdir(), "nasduck-snap-"));
   const name = `snap-${basename(snapRoot)}`;
   const original = process.cwd();
   try {

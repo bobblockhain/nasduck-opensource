@@ -11,7 +11,7 @@ bindings/js/native/*.dll
 bindings/js/npm/*/*.so
 bindings/js/npm/*/*.dylib
 bindings/js/npm/*/*.dll
-.termprobe/
+.nasduck/
 bindings/js/target
 bindings/js/native/target
 bindings/python/target

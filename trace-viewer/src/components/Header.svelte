@@ -6,7 +6,7 @@
 </script>
 
 <header class="topbar">
-  <strong class="brand">tui-test <span>Trace viewer</span></strong>
+  <strong class="brand">nasduck <span>Trace viewer</span></strong>
   <div id="session-summary" class="session-summary">
     {#each Object.entries(summary) as [label, value] (label)}
       <span class="metadata-item" title={`${label}: ${value}`}>

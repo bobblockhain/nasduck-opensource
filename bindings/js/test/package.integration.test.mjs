@@ -5,19 +5,19 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 
-const packageRoot = process.env.TERMPROBE__TEST_PACKAGE_ROOT;
+const packageRoot = process.env.NASDUCK__TEST_PACKAGE_ROOT;
 
 if (packageRoot) {
   test("packed binding works without the CLI", async () => {
     const requireFromPackage = createRequire(join(packageRoot, "package.json"));
-    const packageEntry = requireFromPackage.resolve("@microsoft/termprobe");
+    const packageEntry = requireFromPackage.resolve("@shiplaone2q/nasduck");
     assert.equal(
-      spawnSync("termprobe", ["--version"], { stdio: "ignore" }).error?.code,
+      spawnSync("nasduck", ["--version"], { stdio: "ignore" }).error?.code,
       "ENOENT",
     );
 
-    const { Termprobe } = await import(pathToFileURL(packageEntry).href);
-    const session = Termprobe.ephemeral("release-integration");
+    const { Nasduck } = await import(pathToFileURL(packageEntry).href);
+    const session = Nasduck.ephemeral("release-integration");
     try {
       await session.open();
       await session.submit("echo release-integration");

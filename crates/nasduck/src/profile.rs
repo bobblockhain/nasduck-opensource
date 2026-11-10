@@ -1,0 +1,1363 @@
+//! Terminal profiles: the settings a session runs with.
+//!
+//! A profile is chosen when a session opens and fixed for its lifetime. It is
+//! read from a TOML file so a project can commit the terminal its tests expect,
+//! rather than depending on whatever the machine happens to default to.
+//!
+//! # Colors are resolved here, not by the emulator
+//!
+//! A terminal grid stores color *indices*, not colors: a cell painted with
+//! `SGR 31` records palette slot 1, and what that looks like is the viewer's
+//! choice. Nothing in the emulator needs a palette — xterm.js's `theme` option
+//! is inert in a headless terminal, and alacritty has no palette at all.
+//!
+//! nasduck has to make that choice twice: once to draw a screenshot, and once
+//! to answer `expect --fg "#rrggbb"`. Those answers have to agree. They used to
+//! come from two separate hardcoded tables that disagreed on all sixteen ANSI
+//! slots, so `expect --fg "#800000"` passed on a cell the screenshot painted
+//! `#e88388`. [`Colors`] is the single table both now read.
+
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+use crate::terminal::cell::NamedColor;
+
+/// Rows of scrollback a profile retains when it does not say otherwise.
+///
+/// The emulators do not agree on their own defaults (alacritty 10,000,
+/// xterm.js 1,000), so this is always set explicitly rather than inherited.
+pub const DEFAULT_SCROLLBACK: usize = 10_000;
+
+/// The file a profile is read from, under the config directory.
+pub const CONFIG_FILE: &str = "nasduck.toml";
+
+/// The profile used when none is named.
+pub const DEFAULT_PROFILE: &str = "default";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Rgb {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl Rgb {
+    pub const fn new(r: u8, g: u8, b: u8) -> Self {
+        Rgb { r, g, b }
+    }
+
+    pub fn to_hex(self) -> String {
+        format!("#{:02x}{:02x}{:02x}", self.r, self.g, self.b)
+    }
+
+    /// Parse `#rgb` or `#rrggbb`. The leading `#` is optional so a TOML value
+    /// that lost it to a stray quote still reads sensibly.
+    pub fn parse(s: &str) -> Result<Self, String> {
+        let trimmed = s.trim();
+        let hex = trimmed.strip_prefix('#').unwrap_or(trimmed);
+        let digit = |byte: u8| -> Option<u8> {
+            match byte {
+                b'0'..=b'9' => Some(byte - b'0'),
+                b'a'..=b'f' => Some(byte - b'a' + 10),
+                b'A'..=b'F' => Some(byte - b'A' + 10),
+                _ => None,
+            }
+        };
+        let digits = hex
+            .bytes()
+            .map(digit)
+            .collect::<Option<Vec<_>>>()
+            .ok_or_else(|| format!("invalid hex color {s:?}"))?;
+        match digits.as_slice() {
+            [r, g, b] => Ok(Rgb::new(r * 17, g * 17, b * 17)),
+            [r1, r2, g1, g2, b1, b2] => Ok(Rgb::new(r1 * 16 + r2, g1 * 16 + g2, b1 * 16 + b2)),
+            _ => Err(format!("color must be #rgb or #rrggbb (got {s:?})")),
+        }
+    }
+}
+
+impl Serialize for Rgb {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&self.to_hex())
+    }
+}
+
+impl<'de> Deserialize<'de> for Rgb {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let raw = String::deserialize(d)?;
+        Rgb::parse(&raw).map_err(serde::de::Error::custom)
+    }
+}
+
+/// The colors a session paints with.
+///
+/// Only the sixteen ANSI slots are configurable. Indices 16-255 are the xterm
+/// color cube and gray ramp, which are defined by the spec rather than by a
+/// theme, so [`Colors::rgb`] computes them instead of storing them. A config
+/// that could override them would let two sessions disagree about what
+/// `--fg 196` means.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Colors {
+    /// The color text takes when a cell set none of its own.
+    pub foreground: Rgb,
+    /// The color an unpainted cell takes.
+    pub background: Rgb,
+    /// The color used to draw the cursor.
+    pub cursor: Rgb,
+
+    pub black: Rgb,
+    pub red: Rgb,
+    pub green: Rgb,
+    pub yellow: Rgb,
+    pub blue: Rgb,
+    pub magenta: Rgb,
+    pub cyan: Rgb,
+    pub white: Rgb,
+    pub bright_black: Rgb,
+    pub bright_red: Rgb,
+    pub bright_green: Rgb,
+    pub bright_yellow: Rgb,
+    pub bright_blue: Rgb,
+    pub bright_magenta: Rgb,
+    pub bright_cyan: Rgb,
+    pub bright_white: Rgb,
+}
+
+impl Default for Colors {
+    /// The classic VGA/xterm palette, which is what `TERM=xterm-256color`
+    /// promises and what the assertion layer already compared against.
+    fn default() -> Self {
+        Colors {
+            foreground: Rgb::new(192, 192, 192),
+            background: Rgb::new(0, 0, 0),
+            cursor: Rgb::new(192, 192, 192),
+
+            black: Rgb::new(0, 0, 0),
+            red: Rgb::new(128, 0, 0),
+            green: Rgb::new(0, 128, 0),
+            yellow: Rgb::new(128, 128, 0),
+            blue: Rgb::new(0, 0, 128),
+            magenta: Rgb::new(128, 0, 128),
+            cyan: Rgb::new(0, 128, 128),
+            white: Rgb::new(192, 192, 192),
+            bright_black: Rgb::new(128, 128, 128),
+            bright_red: Rgb::new(255, 0, 0),
+            bright_green: Rgb::new(0, 255, 0),
+            bright_yellow: Rgb::new(255, 255, 0),
+            bright_blue: Rgb::new(0, 0, 255),
+            bright_magenta: Rgb::new(255, 0, 255),
+            bright_cyan: Rgb::new(0, 255, 255),
+            bright_white: Rgb::new(255, 255, 255),
+        }
+    }
+}
+
+impl Colors {
+    /// The sixteen ANSI slots, in palette order.
+    pub fn ansi(&self) -> [Rgb; 16] {
+        [
+            self.black,
+            self.red,
+            self.green,
+            self.yellow,
+            self.blue,
+            self.magenta,
+            self.cyan,
+            self.white,
+            self.bright_black,
+            self.bright_red,
+            self.bright_green,
+            self.bright_yellow,
+            self.bright_blue,
+            self.bright_magenta,
+            self.bright_cyan,
+            self.bright_white,
+        ]
+    }
+
+    /// The name a slot goes by in the config file.
+    pub fn slot_name(index: u8) -> Option<&'static str> {
+        Some(match NamedColor::from_index(index)? {
+            NamedColor::Black => "black",
+            NamedColor::Red => "red",
+            NamedColor::Green => "green",
+            NamedColor::Yellow => "yellow",
+            NamedColor::Blue => "blue",
+            NamedColor::Magenta => "magenta",
+            NamedColor::Cyan => "cyan",
+            NamedColor::White => "white",
+            NamedColor::BrightBlack => "bright_black",
+            NamedColor::BrightRed => "bright_red",
+            NamedColor::BrightGreen => "bright_green",
+            NamedColor::BrightYellow => "bright_yellow",
+            NamedColor::BrightBlue => "bright_blue",
+            NamedColor::BrightMagenta => "bright_magenta",
+            NamedColor::BrightCyan => "bright_cyan",
+            NamedColor::BrightWhite => "bright_white",
+        })
+    }
+
+    /// Set one color by the name used in config files and language bindings.
+    pub fn set_named(&mut self, name: &str, value: Rgb) -> bool {
+        let target = match name {
+            "foreground" => &mut self.foreground,
+            "background" => &mut self.background,
+            "cursor" => &mut self.cursor,
+            "black" => &mut self.black,
+            "red" => &mut self.red,
+            "green" => &mut self.green,
+            "yellow" => &mut self.yellow,
+            "blue" => &mut self.blue,
+            "magenta" => &mut self.magenta,
+            "cyan" => &mut self.cyan,
+            "white" => &mut self.white,
+            "bright_black" => &mut self.bright_black,
+            "bright_red" => &mut self.bright_red,
+            "bright_green" => &mut self.bright_green,
+            "bright_yellow" => &mut self.bright_yellow,
+            "bright_blue" => &mut self.bright_blue,
+            "bright_magenta" => &mut self.bright_magenta,
+            "bright_cyan" => &mut self.bright_cyan,
+            "bright_white" => &mut self.bright_white,
+            _ => return false,
+        };
+        *target = value;
+        true
+    }
+
+    /// Resolve any 256-color index.
+    ///
+    /// Slots 0-15 come from the profile; everything above comes from the
+    /// xterm table, which no profile can move.
+    pub fn rgb(&self, index: u8) -> Rgb {
+        match index {
+            0..=15 => self.ansi()[index as usize],
+            _ => xterm_color(index),
+        }
+    }
+}
+
+/// A color a program can address.
+///
+/// `OSC 4` names a palette entry and `OSC 10/11/12` name the three defaults.
+/// Emulators number these however they like internally, so each backend
+/// translates its own layout and that numbering never reaches here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ColorSlot {
+    Indexed(u8),
+    Foreground,
+    Background,
+    Cursor,
+}
+
+/// The xterm 256-color table, which is the same in every terminal.
+///
+/// Slots 0-15 here are the classic VGA colors, and a profile overrides them.
+/// The rest is the 6x6x6 color cube and the 24-step gray ramp, which the
+/// specification fixes and no profile can move: `--fg 196` has to mean the
+/// same thing in every session.
+static XTERM_256: [Rgb; 256] = build_xterm_256();
+
+const fn build_xterm_256() -> [Rgb; 256] {
+    let mut table = [Rgb::new(0, 0, 0); 256];
+
+    // 0-15: VGA.
+    let vga = [
+        (0, 0, 0),
+        (128, 0, 0),
+        (0, 128, 0),
+        (128, 128, 0),
+        (0, 0, 128),
+        (128, 0, 128),
+        (0, 128, 128),
+        (192, 192, 192),
+        (128, 128, 128),
+        (255, 0, 0),
+        (0, 255, 0),
+        (255, 255, 0),
+        (0, 0, 255),
+        (255, 0, 255),
+        (0, 255, 255),
+        (255, 255, 255),
+    ];
+    let mut i = 0;
+    while i < 16 {
+        table[i] = Rgb::new(vga[i].0, vga[i].1, vga[i].2);
+        i += 1;
+    }
+
+    // 16-231: a 6x6x6 cube whose levels step 0, 95, 135, 175, 215, 255.
+    let levels = [0u8, 95, 135, 175, 215, 255];
+    while i < 232 {
+        let n = i - 16;
+        table[i] = Rgb::new(levels[(n / 36) % 6], levels[(n / 6) % 6], levels[n % 6]);
+        i += 1;
+    }
+
+    // 232-255: a gray ramp from 8 to 238 in steps of 10.
+    while i < 256 {
+        let v = (i - 232) as u8 * 10 + 8;
+        table[i] = Rgb::new(v, v, v);
+        i += 1;
+    }
+    table
+}
+
+/// The color a slot has when nothing has overridden it.
+pub fn xterm_color(index: u8) -> Rgb {
+    XTERM_256[index as usize]
+}
+
+/// The settings a session runs with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Profile {
+    /// Rows retained beyond the visible screen.
+    pub scrollback: usize,
+    pub colors: Colors,
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Profile {
+            scrollback: DEFAULT_SCROLLBACK,
+            colors: Colors::default(),
+        }
+    }
+}
+
+/// Recording settings. Profiles inherit omitted keys from the file.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct RecordingConfig {
+    pub directory: Option<PathBuf>,
+    /// How screenshots and recordings taken under this profile are drawn.
+    pub style: Option<crate::render::style::Style>,
+}
+
+fn fill_missing(overlay: &mut toml::Value, base: &toml::Value) {
+    let (toml::Value::Table(overlay), toml::Value::Table(base)) = (overlay, base) else {
+        return;
+    };
+    for (key, value) in base {
+        match overlay.get_mut(key) {
+            Some(existing) => fill_missing(existing, value),
+            None => {
+                overlay.insert(key.clone(), value.clone());
+            }
+        }
+    }
+}
+
+impl RecordingConfig {
+    fn validate(&self) -> anyhow::Result<()> {
+        if self
+            .directory
+            .as_ref()
+            .is_some_and(|d| d.as_os_str().is_empty())
+        {
+            anyhow::bail!("recording directory must not be empty");
+        }
+        if let Some(style) = &self.style {
+            style.validate().map_err(|error| anyhow::anyhow!(error))?;
+        }
+        Ok(())
+    }
+
+    /// A relative directory means "beside this config", wherever the process
+    /// happens to be running from.
+    fn anchor(&mut self, parent: &Path) {
+        if let Some(directory) = self.directory.as_mut() {
+            if directory.is_relative() {
+                *directory = parent.join(&*directory);
+            }
+        }
+        if let Some(style) = self.style.as_mut() {
+            style.font.resolve_paths(parent);
+        }
+    }
+
+    fn over(&self, base: &RecordingConfig) -> Self {
+        Self {
+            directory: self.directory.clone().or_else(|| base.directory.clone()),
+            style: self.style.clone().or_else(|| base.style.clone()),
+        }
+    }
+}
+
+/// A profile as represented in `nasduck.toml`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ConfigProfile {
+    pub scrollback: Option<usize>,
+    pub colors: Colors,
+    pub timeouts: crate::api::Timeouts,
+    /// Overrides for the file's `[recording]` table.
+    pub recording: RecordingConfig,
+}
+
+/// Concrete session settings resolved from a config profile.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Settings {
+    pub profile: Profile,
+    pub timeouts: crate::api::Timeouts,
+    pub recording: crate::api::AutomaticRecording,
+    /// How this session's screenshots and recordings are drawn.
+    pub style: crate::render::style::Style,
+    pub diagnostics: crate::diagnostics::DiagnosticRetentionOptions,
+    pub trace: crate::diagnostics::TraceOptions,
+}
+
+impl From<ConfigProfile> for Settings {
+    fn from(value: ConfigProfile) -> Self {
+        Self {
+            profile: Profile {
+                scrollback: value.scrollback.unwrap_or(DEFAULT_SCROLLBACK),
+                colors: value.colors,
+            },
+            timeouts: value.timeouts,
+            recording: crate::api::AutomaticRecording::default(),
+            style: crate::render::style::Style::default(),
+            diagnostics: crate::diagnostics::DiagnosticRetentionOptions::default(),
+            trace: crate::diagnostics::TraceOptions::default(),
+        }
+    }
+}
+
+/// A parsed config file.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ConfigFile {
+    pub profiles: BTreeMap<String, ConfigProfile>,
+    pub recording: RecordingConfig,
+    pub diagnostics: crate::diagnostics::DiagnosticRetentionOptions,
+    pub trace: crate::diagnostics::TraceOptions,
+}
+
+impl ConfigFile {
+    /// Merge raw keys before serde fills omitted fields with built-in defaults.
+    fn inherit_profile_styles(&mut self, toml_text: &str) -> anyhow::Result<()> {
+        let document: toml::Value = toml::from_str(toml_text)?;
+        let Some(base) = document
+            .get("recording")
+            .and_then(|recording| recording.get("style"))
+        else {
+            return Ok(());
+        };
+        let mut base = base.clone();
+        // Expand shorthand so per-side overrides inherit the uniform value.
+        for key in ["canvas_padding", "content_padding"] {
+            if let Some(value @ toml::Value::Integer(_)) = base.get_mut(key) {
+                *value = toml::Value::Table(
+                    ["top", "right", "bottom", "left"]
+                        .map(|side| (side.to_string(), value.clone()))
+                        .into_iter()
+                        .collect(),
+                );
+            }
+        }
+        let raw_profiles = document.get("profiles").and_then(toml::Value::as_table);
+        for (name, profile) in self.profiles.iter_mut() {
+            let Some(named) = raw_profiles
+                .and_then(|profiles| profiles.get(name))
+                .and_then(|profile| profile.get("recording"))
+                .and_then(|recording| recording.get("style"))
+            else {
+                continue;
+            };
+            let mut merged = named.clone();
+            fill_missing(&mut merged, &base);
+            profile.recording.style = Some(
+                merged
+                    .try_into()
+                    .map_err(|error| anyhow::anyhow!("profile {name:?}: {error}"))?,
+            );
+        }
+        Ok(())
+    }
+
+    pub fn parse(toml_text: &str) -> anyhow::Result<Self> {
+        let mut config: Self = toml::from_str(toml_text)?;
+        config.inherit_profile_styles(toml_text)?;
+        config.recording.validate()?;
+        for (name, profile) in &config.profiles {
+            profile
+                .recording
+                .validate()
+                .map_err(|error| anyhow::anyhow!("profile {name:?}: {error}"))?;
+        }
+        config.diagnostics.validate().map_err(anyhow::Error::msg)?;
+        config.trace.validate().map_err(anyhow::Error::msg)?;
+        Ok(config)
+    }
+
+    pub fn load(path: &Path) -> anyhow::Result<Self> {
+        let path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()?.join(path)
+        };
+        let text = std::fs::read_to_string(&path)
+            .map_err(|e| anyhow::anyhow!("could not read {}: {e}", path.display()))?;
+        let mut config =
+            Self::parse(&text).map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
+        let parent = path
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .to_path_buf();
+        config.recording.anchor(&parent);
+        for profile in config.profiles.values_mut() {
+            profile.recording.anchor(&parent);
+        }
+        if config.trace.directory.is_relative() {
+            config.trace.directory = path
+                .parent()
+                .unwrap_or_else(|| Path::new("."))
+                .join(&config.trace.directory);
+        }
+        Ok(config)
+    }
+
+    /// The named profile, or the built-in defaults when nothing is named and
+    /// the file defines no `default`.
+    pub fn profile(&self, name: Option<&str>) -> anyhow::Result<Profile> {
+        Ok(self.settings(name)?.profile)
+    }
+
+    /// The named profile and its session timeout defaults.
+    pub fn settings(&self, name: Option<&str>) -> anyhow::Result<Settings> {
+        let profile = match name {
+            Some(name) if name == DEFAULT_PROFILE && !self.profiles.contains_key(name) => {
+                Ok(ConfigProfile::default())
+            }
+            Some(name) => self.profiles.get(name).cloned().ok_or_else(|| {
+                let known: Vec<&str> = self.profiles.keys().map(String::as_str).collect();
+                if known.is_empty() {
+                    anyhow::anyhow!("no profile {name:?}; the config file defines none")
+                } else {
+                    anyhow::anyhow!("no profile {name:?}; found: {}", known.join(", "))
+                }
+            }),
+            None => Ok(self
+                .profiles
+                .get(DEFAULT_PROFILE)
+                .cloned()
+                .unwrap_or_default()),
+        }?;
+        let recording = profile.recording.over(&self.recording);
+        let mut settings: Settings = profile.into();
+        // The engine derives recording retention from the trace mode.
+        settings.recording = crate::api::AutomaticRecording {
+            directory: recording.directory,
+            ..crate::api::AutomaticRecording::default()
+        };
+        settings.style = recording.style.unwrap_or_default();
+        settings.diagnostics = self.diagnostics;
+        settings.trace = self.trace.clone();
+        Ok(settings)
+    }
+}
+
+/// Where a config file is looked for, nearest first.
+///
+/// A project-local file wins so a repository can pin the terminal its tests
+/// expect. `NASDUCK__CONFIG` replaces discovery, which is also how a test
+/// suite pins a config without depending on the working directory.
+pub fn search_paths(cwd: &Path) -> Vec<PathBuf> {
+    if let Some(explicit) = std::env::var_os("NASDUCK__CONFIG") {
+        return vec![PathBuf::from(explicit)];
+    }
+    default_search_paths(cwd)
+}
+
+fn default_search_paths(cwd: &Path) -> Vec<PathBuf> {
+    let config_home = if std::env::var_os("NASDUCK__HOME").is_none() {
+        dirs::config_dir()
+    } else {
+        None
+    };
+    config_search_paths(cwd, config_home.as_deref(), &crate::config::home_dir())
+}
+
+fn config_search_paths(
+    cwd: &Path,
+    platform_config_home: Option<&Path>,
+    nasduck_home: &Path,
+) -> Vec<PathBuf> {
+    let mut paths = vec![cwd.join(CONFIG_FILE)];
+    if let Some(config_home) = platform_config_home {
+        paths.push(config_home.join("nasduck").join(CONFIG_FILE));
+    }
+    let home_config = nasduck_home.join(CONFIG_FILE);
+    if !paths.contains(&home_config) {
+        paths.push(home_config);
+    }
+    paths
+}
+
+/// Resolve a profile: an explicit file if given, else the first file found on
+/// the search path, else the built-in defaults.
+///
+/// Missing discovered files are normal — nasduck runs without one. A path
+/// explicitly named by `--config` or `NASDUCK__CONFIG` must exist, because
+/// silently ignoring it would run the session with settings the user did not
+/// ask for.
+pub fn resolve(
+    explicit_config: Option<&Path>,
+    profile_name: Option<&str>,
+    cwd: &Path,
+) -> anyhow::Result<Profile> {
+    Ok(resolve_settings(explicit_config, profile_name, cwd)?.profile)
+}
+
+/// Resolve terminal settings and session timeout defaults together.
+pub fn resolve_settings(
+    explicit_config: Option<&Path>,
+    profile_name: Option<&str>,
+    cwd: &Path,
+) -> anyhow::Result<Settings> {
+    if let Some(path) = explicit_config {
+        return ConfigFile::load(path)?.settings(profile_name);
+    }
+    if let Some(path) = std::env::var_os("NASDUCK__CONFIG").map(PathBuf::from) {
+        return ConfigFile::load(&path)?.settings(profile_name);
+    }
+    for path in default_search_paths(cwd) {
+        if path.is_file() {
+            return ConfigFile::load(&path)?.settings(profile_name);
+        }
+    }
+    match profile_name {
+        Some(name) => anyhow::bail!("no profile {name:?}: no config file found"),
+        None => Ok(Settings::default()),
+    }
+}
+
+/// The recording policy in force when no session recorded where its output
+/// went, used to explain why there is nothing to show.
+///
+/// Resolved through `settings` rather than off the file's own `[recording]`,
+/// so a `[profiles.default.recording]` is honored here exactly as it is when a
+/// session opens. A session opened under a *named* profile is not knowable
+/// from here, which is why this is only ever a fallback explanation.
+pub fn resolve_recording(
+    explicit_config: Option<&Path>,
+    cwd: &Path,
+) -> anyhow::Result<crate::api::AutomaticRecording> {
+    if let Some(path) = explicit_config {
+        return Ok(ConfigFile::load(path)?.settings(None)?.recording);
+    }
+    if let Some(path) = std::env::var_os("NASDUCK__CONFIG").map(PathBuf::from) {
+        return Ok(ConfigFile::load(&path)?.settings(None)?.recording);
+    }
+    for path in default_search_paths(cwd) {
+        if path.is_file() {
+            return Ok(ConfigFile::load(&path)?.settings(None)?.recording);
+        }
+    }
+    Ok(crate::api::AutomaticRecording::default())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    #[test]
+    fn hex_colors_round_trip() {
+        for raw in ["#000000", "#ffffff", "#800000", "#c0c0c0"] {
+            assert_eq!(Rgb::parse(raw).unwrap().to_hex(), raw);
+        }
+        assert_eq!(Rgb::parse("#f00").unwrap(), Rgb::new(255, 0, 0));
+        assert_eq!(Rgb::parse("800000").unwrap(), Rgb::new(128, 0, 0));
+    }
+
+    #[test]
+    fn a_bad_color_says_what_it_wanted() {
+        for raw in ["", "#12", "#1234567", "nope", "#gggggg", "éa", "##fff"] {
+            let err = Rgb::parse(raw).unwrap_err();
+            assert!(
+                err.contains("color") || err.contains("hex"),
+                "{raw:?}: {err}"
+            );
+        }
+    }
+
+    /// A profile that says nothing is the built-in default, so a config file is
+    /// never required.
+    #[test]
+    fn an_empty_config_yields_the_defaults() {
+        let cfg = ConfigFile::parse("").unwrap();
+        assert_eq!(cfg.profile(None).unwrap(), Profile::default());
+        assert_eq!(Profile::default().scrollback, 10_000);
+    }
+
+    #[test]
+    fn diagnostics_history_limit_is_loaded() {
+        let config = ConfigFile::parse("[diagnostics]\nscreen-history-limit = 3\n").unwrap();
+        assert_eq!(
+            config
+                .settings(None)
+                .unwrap()
+                .diagnostics
+                .screen_history_limit,
+            3
+        );
+    }
+
+    /// Every field is individually optional, so a profile can set one color
+    /// without restating the palette.
+    #[test]
+    fn a_partial_profile_keeps_the_other_defaults() {
+        let cfg = ConfigFile::parse(
+            r##"
+            [profiles.ci]
+            scrollback = 50
+
+            [profiles.ci.colors]
+            red = "#ff0000"
+            "##,
+        )
+        .unwrap();
+        let p = cfg.profile(Some("ci")).unwrap();
+        assert_eq!(p.scrollback, 50);
+        assert_eq!(p.colors.red, Rgb::new(255, 0, 0), "the override applies");
+        assert_eq!(
+            p.colors.green,
+            Colors::default().green,
+            "an unset slot keeps its default"
+        );
+        assert_eq!(
+            p.colors.background,
+            Colors::default().background,
+            "an unset default color is untouched"
+        );
+    }
+
+    #[test]
+    fn profile_timeouts_are_loaded_and_accept_cli_overrides() {
+        let cfg = ConfigFile::parse(
+            r#"
+            [profiles.ci.timeouts]
+            text = 1000
+            command = 30000
+            "#,
+        )
+        .unwrap();
+        let settings = cfg.settings(Some("ci")).unwrap();
+        assert_eq!(settings.timeouts.text, Some(1_000));
+        assert_eq!(settings.timeouts.command, Some(30_000));
+        assert_eq!(settings.timeouts.ready, None);
+
+        let merged = settings.timeouts.with_overrides(crate::api::Timeouts {
+            text: Some(2_000),
+            ready: Some(5_000),
+            ..Default::default()
+        });
+        assert_eq!(merged.text, Some(2_000));
+        assert_eq!(merged.command, Some(30_000));
+        assert_eq!(merged.ready, Some(5_000));
+    }
+
+    #[test]
+    fn recording_directory_and_trace_retention_are_separate() {
+        let config = ConfigFile::parse("[recording]\ndirectory = \"casts\"\n[trace]\nmode = \"on-failure\"\ndirectory = \"traces\"\n").unwrap();
+        let settings = config.settings(None).unwrap();
+        assert_eq!(settings.recording.directory, Some(PathBuf::from("casts")));
+        assert_eq!(
+            settings.trace.mode,
+            crate::diagnostics::TraceMode::OnFailure
+        );
+        assert_eq!(settings.trace.directory, PathBuf::from("traces"));
+        assert_eq!(
+            ConfigFile::default().trace.mode,
+            crate::diagnostics::TraceMode::Off
+        );
+        for mode in ["always", "on-failure", "disabled"] {
+            assert!(ConfigFile::parse(&format!("[recording]\nmode = \"{mode}\"\n")).is_err());
+        }
+        assert!(ConfigFile::parse("[trace]\nmode = \"always\"\n").is_err());
+        assert!(ConfigFile::parse("[trace]\ndirectory = \"\"\n").is_err());
+    }
+
+    #[test]
+    fn empty_recording_directory_is_rejected() {
+        assert!(ConfigFile::parse("[recording]\ndirectory = \"\"\n").is_err());
+    }
+
+    #[test]
+    fn a_profile_style_overrides_the_file_style_key_by_key() {
+        let config = ConfigFile::parse(
+            "[recording.style]\nfont_size = 20\ncanvas_background = \"#ff0000\"\ncanvas_padding = 12\n\
+             \n[recording.style.window]\ntitle_bar = false\nforeground = \"#00ff00\"\n\
+             \n[profiles.docs.recording.style]\nfont_size = 24\n\
+             \n[profiles.docs.recording.style.window]\nforeground = \"#0000ff\"\n\
+             \n[profiles.plain]\n",
+        )
+        .unwrap();
+
+        let docs = config.settings(Some("docs")).unwrap().style;
+        assert_eq!(docs.font_size, 24.0, "the key the profile names wins");
+        assert_eq!(
+            docs.canvas_background,
+            Rgb::new(255, 0, 0),
+            "a key the profile does not name keeps the file's value"
+        );
+        assert_eq!(docs.canvas_top(), 12);
+        assert_eq!(
+            docs.window.foreground,
+            Rgb::new(0, 0, 255),
+            "the rule reaches into sub-tables"
+        );
+        assert!(
+            !docs.window.title_bar,
+            "and a sibling inside that sub-table still comes from the file"
+        );
+
+        let plain = config.settings(Some("plain")).unwrap().style;
+        assert_eq!(plain.font_size, 20.0, "naming no style inherits the file's");
+        assert_eq!(plain.canvas_background, Rgb::new(255, 0, 0));
+    }
+
+    #[test]
+    fn profile_padding_overrides_preserve_unnamed_sides() {
+        for (base, overlay, canvas, content) in [
+            (
+                "canvas_padding = 30\ncontent_padding = 20",
+                "[profiles.docs.recording.style.canvas_padding]\nbottom = 48\n\
+                 [profiles.docs.recording.style.content_padding]\nbottom = 48",
+                [30, 30, 48, 30],
+                [20, 20, 48, 20],
+            ),
+            (
+                "[recording.style.canvas_padding]\ntop = 30\n\
+                 [recording.style.content_padding]\ntop = 20",
+                "[profiles.docs.recording.style.canvas_padding]\nbottom = 48\n\
+                 [profiles.docs.recording.style.content_padding]\nbottom = 48",
+                [30, 24, 48, 24],
+                [20, 15, 48, 15],
+            ),
+            (
+                "[recording.style.canvas_padding]\ntop = 30\n\
+                 [recording.style.content_padding]\ntop = 20",
+                "[profiles.docs.recording.style]\ncanvas_padding = 0\ncontent_padding = 0",
+                [0; 4],
+                [0; 4],
+            ),
+        ] {
+            let config =
+                ConfigFile::parse(&format!("[recording.style]\n{base}\n{overlay}")).unwrap();
+            let style = config.settings(Some("docs")).unwrap().style;
+            assert_eq!(
+                [
+                    style.canvas_top(),
+                    style.canvas_right(),
+                    style.canvas_bottom(),
+                    style.canvas_left(),
+                ],
+                canvas
+            );
+            assert_eq!(
+                [
+                    style.content_top(),
+                    style.content_right(),
+                    style.content_bottom(),
+                    style.content_left(),
+                ],
+                content.map(|side| side as f32)
+            );
+        }
+    }
+
+    #[test]
+    fn a_profile_recording_is_validated_and_anchored() {
+        let error = ConfigFile::parse("[profiles.docs.recording]\ndirectory = \"\"\n")
+            .expect_err("an empty directory is rejected wherever it is written");
+        assert!(
+            error.to_string().contains("docs"),
+            "the error names the profile: {error}"
+        );
+
+        let error = ConfigFile::parse("[profiles.docs.recording.style]\nfont_size = 0\n")
+            .expect_err("a style that cannot be drawn is rejected at parse");
+        assert!(
+            error.to_string().contains("font_size"),
+            "the error names the value: {error}"
+        );
+
+        let dir = std::env::temp_dir().join(format!("nasduck-anchor-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(CONFIG_FILE);
+        std::fs::write(
+            &path,
+            "[profiles.docs.recording]\ndirectory = \"artifacts\"\n\
+             \n[profiles.docs.recording.style.font]\nfiles = [\"fonts/Berkeley.ttf\"]\n",
+        )
+        .unwrap();
+        let config = ConfigFile::load(&path).unwrap();
+        assert_eq!(
+            config.profiles["docs"].recording.directory,
+            Some(dir.join("artifacts")),
+            "a relative directory anchors to the config, not the working directory"
+        );
+        assert_eq!(
+            config.profiles["docs"]
+                .recording
+                .style
+                .as_ref()
+                .unwrap()
+                .font
+                .files,
+            vec![dir.join("fonts").join("Berkeley.ttf")],
+            "and so does a font the repository carries"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The defaults written down in `references/cli.md`. Documentation that
+    /// drifts from the code is worse than none, so the numbers in it are
+    /// pinned here rather than trusted.
+    #[test]
+    fn the_documented_defaults_are_the_real_ones() {
+        let style = crate::render::style::Style::default();
+        assert_eq!(style.font_size, 17.0);
+        assert_eq!(style.title_font_size, 13.0);
+        assert_eq!(style.canvas_background, Rgb::new(0x68, 0x67, 0xaa));
+        assert_eq!(style.canvas_top(), 24);
+        assert_eq!(
+            (
+                style.content_top(),
+                style.content_right(),
+                style.content_bottom(),
+                style.content_left()
+            ),
+            (8.0, 15.0, 14.0, 15.0)
+        );
+        assert_eq!(
+            style.font.family,
+            "'Cascadia Code','JetBrains Mono','Fira Code',Menlo,Consolas,'DejaVu Sans Mono',monospace"
+        );
+        assert!(style.window.title_bar);
+        assert!(style.window.traffic_lights);
+        assert_eq!(style.window.background, Rgb::new(0xd9, 0xd9, 0xe8));
+        assert_eq!(style.window.foreground, Rgb::new(0x41, 0x41, 0x45));
+        assert_eq!(style.window.divider, Rgb::new(0, 0, 0));
+        assert_eq!(style.border.width, 0.0);
+        assert_eq!(style.border.color, Rgb::new(0, 0, 0));
+        assert_eq!(style.border.radius, 8.0);
+        assert!(style.shadow.enabled);
+        assert_eq!(style.shadow.color, Rgb::new(0x08, 0x08, 0x12));
+        assert_eq!(style.shadow.offset, 5.0);
+        assert_eq!(style.shadow.spread, 7.0);
+    }
+
+    /// The per-profile example in `references/cli.md`, and the claim the prose
+    /// around it makes about what the profile ends up with.
+    #[test]
+    fn the_documented_per_profile_example_does_what_it_says() {
+        let config = ConfigFile::parse(
+            "[recording]\ndirectory = \"./artifacts\"\n\
+             \n[recording.style]\ncanvas_background = \"#101014\"\ncanvas_padding = 32\n\
+             \n[profiles.docs.recording]\ndirectory = \"./docs/media\"\n\
+             \n[profiles.docs.recording.style]\nfont_size = 24\n",
+        )
+        .expect("the documented example parses");
+
+        let docs = config.settings(Some("docs")).unwrap();
+        assert_eq!(
+            docs.recording.directory,
+            Some(PathBuf::from("./docs/media"))
+        );
+        assert_eq!(docs.style.font_size, 24.0);
+        assert_eq!(docs.style.canvas_background, Rgb::new(0x10, 0x10, 0x14));
+        assert_eq!(docs.style.canvas_top(), 32);
+    }
+
+    /// The per-profile examples in `references/cli.md`. Each profile names a
+    /// different mix of keys, so between them they cover overriding a policy,
+    /// overriding a style key, and naming neither.
+    #[test]
+    fn the_documented_profile_overrides_resolve_as_written() {
+        let config = ConfigFile::parse(include_str!("testdata/profiles.toml"))
+            .expect("the documented example parses");
+        let style = |name| config.settings(Some(name)).unwrap().style;
+        let directory = |name| config.settings(Some(name)).unwrap().recording.directory;
+
+        // docs: overrides the directory and one style key.
+        assert_eq!(directory("docs"), Some(PathBuf::from("./docs/media")));
+        assert_eq!(style("docs").font_size, 24.0);
+        assert_eq!(
+            style("docs").canvas_background,
+            Rgb::new(0x10, 0x10, 0x14),
+            "and keeps the canvas the file set"
+        );
+        assert_eq!(style("docs").canvas_top(), 30);
+
+        // ci: names no directory at all, so it comes from the file.
+        assert_eq!(directory("ci"), Some(PathBuf::from("./artifacts")));
+        assert_eq!(style("ci").canvas_top(), 8, "its own gap");
+        assert!(!style("ci").window.title_bar);
+        assert!(!style("ci").shadow.enabled);
+        assert_eq!(
+            style("ci").window.background,
+            Rgb::new(0x1a, 0x1a, 0x22),
+            "a sibling inside the same sub-table still comes from the file"
+        );
+        assert_eq!(style("ci").font_size, 17.0);
+
+        // demo: a look of its own, still inheriting the file's directory.
+        assert_eq!(directory("demo"), Some(PathBuf::from("./artifacts")));
+        assert_eq!(style("demo").canvas_background, Rgb::new(0xf6, 0xf6, 0xf8));
+        assert_eq!(style("demo").border.width, 2.0);
+        assert_eq!(
+            style("demo").window.divider,
+            Rgb::new(0x2a, 0x2a, 0x36),
+            "the divider it did not name comes from the file"
+        );
+        assert_eq!(style("demo").canvas_top(), 30);
+    }
+
+    #[test]
+    fn naming_the_default_profile_matches_omitting_it() {
+        let config = ConfigFile::parse(
+            "[recording]\ndirectory = \"a\"\n\n[profiles.docs.recording]\ndirectory = \"b\"\n",
+        )
+        .unwrap();
+
+        assert_eq!(
+            config
+                .settings(Some(DEFAULT_PROFILE))
+                .unwrap()
+                .recording
+                .directory,
+            config.settings(None).unwrap().recording.directory,
+            "the flag's own default must not be an error on a config without it"
+        );
+        assert!(
+            config.settings(Some("nope")).is_err(),
+            "any other unknown profile is still an error"
+        );
+    }
+
+    #[test]
+    fn a_profile_that_names_no_style_keeps_the_file_style() {
+        let config = ConfigFile::parse(
+            "[recording]\ndirectory = \"artifacts\"\n\
+             \n[recording.style]\nfont_size = 30\n\
+             \n[profiles.ops.recording]\ndirectory = \"shots\"\n",
+        )
+        .unwrap();
+
+        let ops = config.settings(Some("ops")).unwrap();
+        assert_eq!(
+            ops.style.font_size, 30.0,
+            "a profile adjusting only where recordings land keeps the file's look"
+        );
+        assert_eq!(ops.recording.directory, Some(PathBuf::from("shots")));
+    }
+
+    /// A profile changes the recording settings it names and inherits the
+    /// rest. Replacing the table whole would mean that setting a font size
+    /// silently reset the mode the file had established.
+    #[test]
+    fn a_profile_recording_inherits_field_by_field() {
+        let config = ConfigFile::parse(
+            "[recording]\ndirectory = \"artifacts\"\n\
+             \n[profiles.docs.recording.style]\nfont_size = 24\n\
+             \n[profiles.ci.recording]\ndirectory = \"ci-artifacts\"\n",
+        )
+        .unwrap();
+
+        let docs = config.settings(Some("docs")).unwrap();
+        assert_eq!(docs.style.font_size, 24.0, "the profile's style applies");
+        assert_eq!(
+            docs.recording.directory,
+            Some(PathBuf::from("artifacts")),
+            "and naming only a style leaves the file's directory alone"
+        );
+
+        let ci = config.settings(Some("ci")).unwrap();
+        assert_eq!(ci.recording.directory, Some(PathBuf::from("ci-artifacts")));
+        assert_eq!(
+            ci.style,
+            crate::render::style::Style::default(),
+            "and a profile naming no style gets the default"
+        );
+    }
+
+    #[test]
+    fn trace_directory_is_relative_to_config_without_a_recording_directory() {
+        let root =
+            std::env::temp_dir().join(format!("nasduck-trace-config-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("nasduck.toml");
+        std::fs::write(&path, "[trace]\nmode = \"on\"\ndirectory = \"traces\"\n").unwrap();
+        let settings = ConfigFile::load(&path).unwrap().settings(None).unwrap();
+        assert_eq!(settings.trace.directory, root.join("traces"));
+        assert!(settings.recording.directory.is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn an_unknown_timeout_class_is_rejected() {
+        let err = ConfigFile::parse("[profiles.ci.timeouts]\ncommands = 10\n")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("commands"), "{err}");
+    }
+
+    #[test]
+    fn an_unknown_profile_names_the_ones_that_exist() {
+        let cfg = ConfigFile::parse("[profiles.ci]\n[profiles.demo]\n").unwrap();
+        let err = cfg.profile(Some("nope")).unwrap_err().to_string();
+        assert!(err.contains("ci") && err.contains("demo"), "{err}");
+    }
+
+    /// A typo in a key is an error rather than a setting that silently does
+    /// nothing.
+    #[test]
+    fn an_unknown_key_is_rejected() {
+        let err = ConfigFile::parse("[profiles.ci]\nscrollbacks = 10\n")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("scrollbacks"), "{err}");
+    }
+
+    /// Above the sixteen configurable slots the palette is spec, not
+    /// preference, so profiles cannot disagree about what `--fg 196` means.
+    #[test]
+    fn the_color_cube_ignores_the_profile() {
+        let recolored = Colors {
+            red: Rgb::new(1, 2, 3),
+            ..Default::default()
+        };
+        for n in 16u8..=255 {
+            assert_eq!(recolored.rgb(n), Colors::default().rgb(n), "index {n}");
+        }
+        assert_eq!(Colors::default().rgb(196), Rgb::new(255, 0, 0));
+        assert_eq!(Colors::default().rgb(232), Rgb::new(8, 8, 8));
+        assert_eq!(recolored.rgb(1), Rgb::new(1, 2, 3), "but slot 1 follows it");
+    }
+
+    /// Every configurable slot is reachable by the name the file uses, so the
+    /// documented key set and the resolver cannot drift apart.
+    #[test]
+    fn every_ansi_slot_has_a_config_key() {
+        for i in 0u8..16 {
+            let name = Colors::slot_name(i).unwrap_or_else(|| panic!("slot {i} unnamed"));
+            let toml = format!("[profiles.p.colors]\n{name} = \"#010203\"\n");
+            let p = ConfigFile::parse(&toml)
+                .unwrap()
+                .profile(Some("p"))
+                .unwrap();
+            assert_eq!(
+                p.colors.rgb(i),
+                Rgb::new(1, 2, 3),
+                "setting {name:?} must move slot {i}"
+            );
+        }
+        assert_eq!(Colors::slot_name(16), None, "only 0-15 are configurable");
+    }
+
+    #[test]
+    fn every_binding_color_name_is_settable() {
+        let mut colors = Colors::default();
+        let replacement = Rgb::new(1, 2, 3);
+        for name in [
+            "foreground",
+            "background",
+            "cursor",
+            "black",
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "magenta",
+            "cyan",
+            "white",
+            "bright_black",
+            "bright_red",
+            "bright_green",
+            "bright_yellow",
+            "bright_blue",
+            "bright_magenta",
+            "bright_cyan",
+            "bright_white",
+        ] {
+            assert!(colors.set_named(name, replacement), "{name}");
+        }
+        assert!(!colors.set_named("chartreuse", replacement));
+        assert!([
+            colors.foreground,
+            colors.background,
+            colors.cursor,
+            colors.black,
+            colors.red,
+            colors.green,
+            colors.yellow,
+            colors.blue,
+            colors.magenta,
+            colors.cyan,
+            colors.white,
+            colors.bright_black,
+            colors.bright_red,
+            colors.bright_green,
+            colors.bright_yellow,
+            colors.bright_blue,
+            colors.bright_magenta,
+            colors.bright_cyan,
+            colors.bright_white,
+        ]
+        .into_iter()
+        .all(|color| color == replacement));
+    }
+
+    /// The 16 configurable slots come from the profile; the rest come from the
+    /// xterm table, which is the same in every terminal.
+    #[test]
+    fn only_the_ansi_slots_follow_the_profile() {
+        let recolored = Colors {
+            red: Rgb::new(1, 2, 3),
+            ..Default::default()
+        };
+        assert_eq!(recolored.rgb(1), Rgb::new(1, 2, 3), "slot 1 follows it");
+        for index in 16u8..=255 {
+            assert_eq!(
+                recolored.rgb(index),
+                xterm_color(index),
+                "slot {index} is fixed by the specification"
+            );
+        }
+    }
+
+    /// Spot-check the static table against the values the specification
+    /// defines, so a typo in 256 entries cannot pass unnoticed.
+    #[test]
+    fn the_xterm_table_matches_the_specification() {
+        assert_eq!(xterm_color(0), Rgb::new(0, 0, 0), "VGA black");
+        assert_eq!(xterm_color(1), Rgb::new(128, 0, 0), "VGA red");
+        assert_eq!(xterm_color(15), Rgb::new(255, 255, 255), "VGA bright white");
+        assert_eq!(
+            xterm_color(16),
+            Rgb::new(0, 0, 0),
+            "the cube starts at black"
+        );
+        assert_eq!(xterm_color(196), Rgb::new(255, 0, 0), "cube red");
+        assert_eq!(
+            xterm_color(231),
+            Rgb::new(255, 255, 255),
+            "the cube ends white"
+        );
+        assert_eq!(xterm_color(232), Rgb::new(8, 8, 8), "the ramp starts at 8");
+        assert_eq!(
+            xterm_color(255),
+            Rgb::new(238, 238, 238),
+            "the ramp ends at 238"
+        );
+    }
+
+    /// A project-local file wins over the user's, so a repository can pin the
+    /// terminal its tests expect. `NASDUCK__CONFIG` replaces discovery.
+    #[test]
+    fn the_search_order_puts_the_project_first() {
+        let _guard = ENV_LOCK.lock().unwrap();
+
+        let old = std::env::var_os("NASDUCK__CONFIG");
+        std::env::remove_var("NASDUCK__CONFIG");
+        let cwd = std::env::temp_dir().join("some-project");
+        let pinned_path = std::env::temp_dir().join("pinned.toml");
+        let result = std::panic::catch_unwind(|| {
+            let paths = search_paths(&cwd);
+            assert!(paths.len() >= 2);
+            assert_eq!(paths[0], cwd.join(CONFIG_FILE), "the project file is first");
+            assert!(
+                paths[1..].iter().all(|path| path.ends_with(CONFIG_FILE)),
+                "every user candidate names the config file: {paths:?}"
+            );
+
+            std::env::set_var("NASDUCK__CONFIG", &pinned_path);
+            let pinned = search_paths(&cwd);
+            assert_eq!(
+                pinned,
+                vec![pinned_path.clone()],
+                "an explicit config replaces the search entirely"
+            );
+        });
+        std::env::remove_var("NASDUCK__CONFIG");
+        if let Some(value) = old {
+            std::env::set_var("NASDUCK__CONFIG", value);
+        }
+        result.unwrap();
+    }
+
+    #[test]
+    fn the_platform_config_directory_precedes_nasduck_home() {
+        let cwd = Path::new("project");
+        let config_home = Path::new("xdg-config");
+        let nasduck_home = Path::new("nasduck-home");
+        assert_eq!(
+            config_search_paths(cwd, Some(config_home), nasduck_home),
+            vec![
+                cwd.join(CONFIG_FILE),
+                config_home.join("nasduck").join(CONFIG_FILE),
+                nasduck_home.join(CONFIG_FILE),
+            ]
+        );
+    }
+
+    /// An environment override is an explicit request, just like `--config`,
+    /// so a typo must not silently fall back to the built-in profile.
+    #[test]
+    fn a_missing_environment_override_is_an_error() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let old = std::env::var_os("NASDUCK__CONFIG");
+        let dir = std::env::temp_dir().join(format!("su-profile-env-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let missing = dir.join("missing.toml");
+
+        std::env::set_var("NASDUCK__CONFIG", &missing);
+        let result = std::panic::catch_unwind(|| {
+            let err = resolve(None, None, &dir).unwrap_err().to_string();
+            assert!(
+                err.contains("missing.toml"),
+                "the explicit missing path is named: {err}"
+            );
+        });
+
+        std::env::remove_var("NASDUCK__CONFIG");
+        if let Some(value) = old {
+            std::env::set_var("NASDUCK__CONFIG", value);
+        }
+        std::fs::remove_dir_all(&dir).ok();
+        result.unwrap();
+    }
+
+    /// Running without a config file is normal, so a missing one is not an
+    /// error. A file that exists but does not parse is, because ignoring it
+    /// would silently run with settings nobody asked for.
+    #[test]
+    fn a_missing_config_defaults_but_a_broken_one_fails() {
+        let dir = std::env::temp_dir().join(format!("su-profile-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let missing = dir.join("absent.toml");
+        assert!(
+            resolve(Some(&missing), None, &dir).is_err(),
+            "named-but-absent is an error"
+        );
+
+        let broken = dir.join("broken.toml");
+        std::fs::write(&broken, "[profiles.ci]\nscrollback = \"lots\"\n").unwrap();
+        let err = resolve(Some(&broken), None, &dir).unwrap_err().to_string();
+        assert!(
+            err.contains("broken.toml"),
+            "the error names the file: {err}"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+}

@@ -14,14 +14,14 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            bin: target/debug/termprobe
+            bin: target/debug/nasduck
           - os: windows-latest
-            bin: target/debug/termprobe.exe
+            bin: target/debug/nasduck.exe
           - os: ubuntu-latest
-            bin: target/debug/termprobe
+            bin: target/debug/nasduck
     runs-on: ${{ matrix.os }}
     env:
-      TERMPROBE__BIN: ${{ github.workspace }}/${{ matrix.bin }}
+      NASDUCK__BIN: ${{ github.workspace }}/${{ matrix.bin }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -63,35 +63,35 @@ jobs:
 
       - run: cargo fmt --all -- --check
       - name: Verify generated native declarations
-        run: cargo run --locked -p termprobe-bindgen -- --check
+        run: cargo run --locked -p nasduck-bindgen -- --check
       - name: Compile the native header as C and C++
         if: runner.os != 'Windows'
         run: |
-          cc -std=c11 -fsyntax-only -Icrates/termprobe-ffi/include .github/scripts/check-native-header.c
-          c++ -std=c++17 -x c++ -fsyntax-only -Icrates/termprobe-ffi/include .github/scripts/check-native-header.c
+          cc -std=c11 -fsyntax-only -Icrates/nasduck-ffi/include .github/scripts/check-native-header.c
+          c++ -std=c++17 -x c++ -fsyntax-only -Icrates/nasduck-ffi/include .github/scripts/check-native-header.c
       - name: Test native package assembly
         if: runner.os == 'Linux'
         run: |
           npm test --prefix .github/scripts
           node .github/scripts/release/verify-go-version.mjs
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-      - run: cargo clippy -p termprobe-rs --all-targets --no-default-features -- -D warnings
-      - run: cargo build -p termprobe-cli -p termprobe-ffi
+      - run: cargo clippy -p nasduck-rs --all-targets --no-default-features -- -D warnings
+      - run: cargo build -p nasduck-cli -p nasduck-ffi
       - run: cargo test --workspace -- --test-threads=1
       # The recording renderer and its font catalog are behind a feature that
       # is off by default, so the line above never compiles them in.
-      - run: cargo test -p termprobe-rs --features recording-font-jetbrains-mono-styles -- --test-threads=1
+      - run: cargo test -p nasduck-rs --features recording-font-jetbrains-mono-styles -- --test-threads=1
 
       - name: Test Go binding
         shell: bash
         run: |
           case "$RUNNER_OS" in
-            Linux) library=libtermprobe_ffi.so ;;
-            macOS) library=libtermprobe_ffi.dylib ;;
-            Windows) library=termprobe_ffi.dll ;;
+            Linux) library=libnasduck_ffi.so ;;
+            macOS) library=libnasduck_ffi.dylib ;;
+            Windows) library=nasduck_ffi.dll ;;
             *) echo "Unsupported runner: $RUNNER_OS" >&2; exit 1 ;;
           esac
-          export TERMPROBE__NATIVE_LIBRARY="$GITHUB_WORKSPACE/target/debug/$library"
+          export NASDUCK__NATIVE_LIBRARY="$GITHUB_WORKSPACE/target/debug/$library"
           export CGO_ENABLED=0
           cd bindings/go
           unformatted="$(gofmt -l .)"
@@ -102,15 +102,15 @@ jobs:
           go vet ./...
           go test ./...
           go run ./examples/smoke
-          CGO_ENABLED=1 go test -tags=termprobe_abi_check -run '^TestNativeLayoutMatchesCompiler$' -count=1 ./internal/native
+          CGO_ENABLED=1 go test -tags=nasduck_abi_check -run '^TestNativeLayoutMatchesCompiler$' -count=1 ./internal/native
 
       - name: Test embedded Go consumer
         shell: bash
         run: |
           case "$RUNNER_OS" in
-            Linux) library=libtermprobe_ffi.so ;;
-            macOS) library=libtermprobe_ffi.dylib ;;
-            Windows) library=termprobe_ffi.dll ;;
+            Linux) library=libnasduck_ffi.so ;;
+            macOS) library=libnasduck_ffi.dylib ;;
+            Windows) library=nasduck_ffi.dll ;;
             *) echo "Unsupported runner: $RUNNER_OS" >&2; exit 1 ;;
           esac
           target="$(rustc -vV | sed -n 's/^host: //p')"
@@ -122,7 +122,7 @@ jobs:
             --output "$RUNNER_TEMP/go-package"
           node .github/scripts/test-go-embedded.mjs "$RUNNER_TEMP/go-package"
           cd "$RUNNER_TEMP/go-package"
-          unset TERMPROBE__NATIVE_LIBRARY
+          unset NASDUCK__NATIVE_LIBRARY
           CGO_ENABLED=0 go test ./...
           CGO_ENABLED=1 go test -race ./...
 
@@ -136,12 +136,12 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl
           node bindings/js/scripts/build-native.mjs --debug --target x86_64-unknown-linux-gnu --zig
-          RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" cargo zigbuild --locked -p termprobe-ffi --target x86_64-unknown-linux-musl
+          RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" cargo zigbuild --locked -p nasduck-ffi --target x86_64-unknown-linux-musl
           for target in x86_64-unknown-linux-gnu x86_64-unknown-linux-musl; do
             node .github/scripts/release/check-native-elf.mjs \
-              --library "target/$target/debug/libtermprobe_ffi.so" --target "$target"
+              --library "target/$target/debug/libnasduck_ffi.so" --target "$target"
             node .github/scripts/release/package-native.mjs native \
-              --library "target/$target/debug/libtermprobe_ffi.so" --target "$target" \
+              --library "target/$target/debug/libnasduck_ffi.so" --target "$target" \
               --output target/native-packages
           done
           node .github/scripts/release/package-native.mjs go \
@@ -196,7 +196,7 @@ jobs:
       - name: Verify generated Node declarations
         shell: bash
         run: |
-          cargo run --locked -p termprobe-bindgen -- --check
+          cargo run --locked -p nasduck-bindgen -- --check
           ! grep -Eq 'JsonValue|Promise<unknown>|\brequest\(|\bBuffer\b' bindings/js/native/index.d.ts
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0

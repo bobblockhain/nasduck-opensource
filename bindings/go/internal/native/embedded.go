@@ -21,11 +21,11 @@ type bundledLibrary struct {
 }
 
 // Release packaging adds go:embed files for the target OS and architecture.
-// Source checkouts leave this map empty and use TERMPROBE__NATIVE_LIBRARY.
+// Source checkouts leave this map empty and use NASDUCK__NATIVE_LIBRARY.
 var bundledLibraries = map[string]bundledLibrary{}
 
 func nativeLibraryPath(libraries map[string]bundledLibrary) (string, error) {
-	if path := os.Getenv("TERMPROBE__NATIVE_LIBRARY"); path != "" {
+	if path := os.Getenv("NASDUCK__NATIVE_LIBRARY"); path != "" {
 		return path, nil
 	}
 	target, err := bundleTarget(runtime.GOOS, runtime.GOARCH, nativeLibc())
@@ -34,7 +34,7 @@ func nativeLibraryPath(libraries map[string]bundledLibrary) (string, error) {
 	}
 	library, ok := libraries[target]
 	if !ok {
-		return "", fmt.Errorf("no bundled native engine for %s: install a released Go module or set TERMPROBE__NATIVE_LIBRARY to a library from the same source revision", target)
+		return "", fmt.Errorf("no bundled native engine for %s: install a released Go module or set NASDUCK__NATIVE_LIBRARY to a library from the same source revision", target)
 	}
 	cache, err := os.UserCacheDir()
 	if err != nil {
@@ -63,7 +63,7 @@ func bundleTarget(goos, goarch, libc string) (string, error) {
 }
 
 func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr error) {
-	directory := filepath.Join(cache, "termprobe", "native", library.checksum)
+	directory := filepath.Join(cache, "nasduck", "native", library.checksum)
 	if err := os.MkdirAll(directory, 0o700); err != nil {
 		return "", fmt.Errorf("create native engine cache: %w", err)
 	}

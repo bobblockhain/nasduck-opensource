@@ -1,4 +1,4 @@
-#include "termprobe.h"
+#include "nasduck.h"
 
 int main(void) {
     TuiWaitOptions options = {0};

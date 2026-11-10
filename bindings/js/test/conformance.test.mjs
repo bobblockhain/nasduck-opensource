@@ -3,9 +3,9 @@ import { execFileSync } from "node:child_process";
 import { test } from "node:test";
 
 import * as sdk from "../dist/index.js";
-import { Termprobe } from "../dist/index.js";
+import { Nasduck } from "../dist/index.js";
 
-const BIN = process.env.TERMPROBE__BIN || "termprobe";
+const BIN = process.env.NASDUCK__BIN || "nasduck";
 
 function agentContext() {
   const out = execFileSync(BIN, ["agent-context"], { encoding: "utf8" });
@@ -64,7 +64,7 @@ const MAPPING = {
 const EXCLUDED = new Set(["monitor", "status", "daemon", "usage", "agent-context", "skill"]);
 
 test("every cli command is mapped or excluded", { skip: !schema }, () => {
-  const instance = new Termprobe("conformance");
+  const instance = new Nasduck("conformance");
   for (const command of Object.keys(schema.commands)) {
     if (EXCLUDED.has(command)) {
       continue;
@@ -81,7 +81,7 @@ test("every cli command is mapped or excluded", { skip: !schema }, () => {
 });
 
 test("keyboard exposes every key action", () => {
-  const keyboard = new Termprobe("keyboard-conformance").keyboard;
+  const keyboard = new Nasduck("keyboard-conformance").keyboard;
   for (const method of ["press", "down", "repeat", "up"]) {
     assert.equal(typeof keyboard[method], "function", method);
   }

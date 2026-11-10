@@ -8,7 +8,7 @@ import test from "node:test";
 const script = fileURLToPath(new URL("./package-node.mjs", import.meta.url));
 const { nativeTargets } = JSON.parse(fs.readFileSync(new URL("../../../bindings/js/package.json", import.meta.url), "utf8"));
 const targets = Object.values(nativeTargets);
-const library = (platform) => `termprobe.${platform}.${platform.startsWith("darwin") ? "dylib" : platform.startsWith("win32") ? "dll" : "so"}`;
+const library = (platform) => `nasduck.${platform}.${platform.startsWith("darwin") ? "dylib" : platform.startsWith("win32") ? "dll" : "so"}`;
 
 function fixture(t) {
   const target = path.resolve("target");
@@ -18,7 +18,7 @@ function fixture(t) {
   const bindings = path.join(directory, "bindings/js");
   fs.mkdirSync(path.join(bindings, "artifacts"), { recursive: true });
   fs.writeFileSync(path.join(bindings, "package.json"), JSON.stringify({
-    name: "@fixture/termprobe",
+    name: "@fixture/nasduck",
     version: "1.0.0",
     files: ["index.js"],
     dependencies: { koffi: "^3.3.3" },
@@ -38,7 +38,7 @@ test("platform packages include the shared library at the release version", (t) 
   execFileSync(process.execPath, [script], { cwd: directory, stdio: "pipe" });
   assert.equal(fs.readFileSync(packagePath, "utf8"), original);
   for (const platform of targets) {
-    const archive = path.join(directory, "package-artifacts/npm", `fixture-termprobe-${platform}-1.0.0.tgz`);
+    const archive = path.join(directory, "package-artifacts/npm", `fixture-nasduck-${platform}-1.0.0.tgz`);
     const entries = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).split("\n");
     assert.ok(entries.includes(`package/${library(platform)}`));
     assert.ok(!entries.some((entry) => entry.endsWith(".node")));
@@ -48,10 +48,10 @@ test("platform packages include the shared library at the release version", (t) 
     assert.deepEqual(manifest.cpu, [platform.split("-")[1]]);
     if (platform.startsWith("linux")) assert.deepEqual(manifest.libc, [platform.endsWith("gnu") ? "glibc" : "musl"]);
   }
-  const archive = path.join(directory, "package-artifacts/npm/fixture-termprobe-1.0.0.tgz");
+  const archive = path.join(directory, "package-artifacts/npm/fixture-nasduck-1.0.0.tgz");
   const manifest = JSON.parse(execFileSync("tar", ["-xOf", archive, "package/package.json"], { encoding: "utf8" }));
   assert.equal(manifest.dependencies.koffi, "^3.3.3");
-  assert.deepEqual(manifest.optionalDependencies, Object.fromEntries(targets.map((platform) => [`@fixture/termprobe-${platform}`, "1.0.0"])));
+  assert.deepEqual(manifest.optionalDependencies, Object.fromEntries(targets.map((platform) => [`@fixture/nasduck-${platform}`, "1.0.0"])));
 });
 
 test("packaging rejects a missing shared library artifact", (t) => {

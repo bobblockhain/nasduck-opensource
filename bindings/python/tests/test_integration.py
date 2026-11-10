@@ -11,8 +11,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import tui_test
-from tui_test import (
+import nasduck
+from nasduck import (
     Colors,
     ExpectationError,
     FailureArtifactRef,
@@ -21,7 +21,7 @@ from tui_test import (
     InternalError,
     NoSessionError,
     Profile,
-    TuiTest,
+    Nasduck,
     TextStyle,
     Timeouts,
     UsageError,
@@ -29,7 +29,7 @@ from tui_test import (
     testing,
     unique_session,
 )
-from tui_test import _native
+from nasduck import _native
 
 SHELL = "pwsh" if sys.platform == "win32" else "bash"
 TWO_BELLS_COMMAND = (
@@ -59,7 +59,7 @@ def run(coro):
 
 class IntegrationTests(unittest.TestCase):
     def _client(self, **kwargs):
-        return TuiTest.ephemeral("pytest", **kwargs)
+        return Nasduck.ephemeral("pytest", **kwargs)
 
     def test_echo_roundtrip(self):
         async def scenario():
@@ -88,7 +88,7 @@ class IntegrationTests(unittest.TestCase):
                         with self.subTest(method=method.__name__, options=options):
                             with self.assertRaises(UsageError):
                                 await method(*args, **options, retries=2, restart=True)
-                            self.assertIn(su.session, await tui_test.sessions())
+                            self.assertIn(su.session, await nasduck.sessions())
                             await su.get_by_text("retry-owner-ready").expect(timeout=0)
                             reused = await su.run(sys.executable, "-c", script)
                             self.assertEqual(reused["shell_pid"], opened["shell_pid"])
@@ -175,7 +175,7 @@ class IntegrationTests(unittest.TestCase):
         async def scenario():
             with tempfile.TemporaryDirectory() as root:
                 name = unique_session("recording-failed-open")
-                su = TuiTest(
+                su = Nasduck(
                     name,
                     recording={"directory": root},
                     trace={"mode": "on-failure", "directory": str(Path(root) / "traces")},
@@ -705,10 +705,10 @@ class IntegrationTests(unittest.TestCase):
 
     def test_sessions_lists_open_session(self):
         async def scenario():
-            su = TuiTest(unique_session("pytest"))
+            su = Nasduck(unique_session("pytest"))
             await su.open(shell=SHELL)
             try:
-                names = await tui_test.sessions()
+                names = await nasduck.sessions()
                 self.assertIn(su.session, names)
             finally:
                 await su.close_quiet()
@@ -718,13 +718,13 @@ class IntegrationTests(unittest.TestCase):
     def test_close_evicts_session_and_retains_recording(self):
         async def scenario(root):
             name = unique_session("recording")
-            su = TuiTest(name, trace={"mode": "on", "directory": root})
+            su = Nasduck(name, trace={"mode": "on", "directory": root})
             await su.open(shell=SHELL)
             await su.submit("echo retained-recording")
             await su.wait_command()
             await su.close()
 
-            self.assertNotIn(name, await tui_test.sessions())
+            self.assertNotIn(name, await nasduck.sessions())
             with self.assertRaises(NoSessionError):
                 await su.state()
             self.assertIn("retained-recording", await get_recording(name))
@@ -826,7 +826,7 @@ class IntegrationTests(unittest.TestCase):
                                 session=name, program=program, trace=trace,
                                 wait_ready=False, retries=0,
                             )
-                            if use_helper else TuiTest(name, trace=trace)
+                            if use_helper else Nasduck(name, trace=trace)
                         )
                         expected_error = type(failure) if failure is not None else InternalError
                         with self.assertRaises(expected_error) as raised:
@@ -840,7 +840,7 @@ class IntegrationTests(unittest.TestCase):
                             self.assertIs(raised.exception, failure)
                         else:
                             self.assertIn("trace directory", str(raised.exception))
-                        self.assertNotIn(name, await tui_test.sessions())
+                        self.assertNotIn(name, await nasduck.sessions())
                         self.assertEqual(testing.tracked_count(), 0)
 
         with tempfile.TemporaryDirectory() as root:
@@ -849,14 +849,14 @@ class IntegrationTests(unittest.TestCase):
     def test_same_name_clients_share_typed_operations(self):
         async def scenario():
             name = unique_session("same-name")
-            first = TuiTest(name)
-            second = TuiTest(name)
+            first = Nasduck(name)
+            second = Nasduck(name)
             try:
                 await first.open(shell=SHELL)
                 await second.submit("echo shared-session")
                 await first.wait_command()
                 self.assertIn("shared-session", await second.text())
-                self.assertIn(name, await tui_test.sessions())
+                self.assertIn(name, await nasduck.sessions())
             finally:
                 await first.close_quiet()
                 await second.close_quiet()
@@ -869,9 +869,9 @@ class IntegrationTests(unittest.TestCase):
             second = self._client()
             await first.open(shell=SHELL)
             await second.open(shell=SHELL)
-            await tui_test.close_all()
-            self.assertNotIn(first.session, await tui_test.sessions())
-            self.assertNotIn(second.session, await tui_test.sessions())
+            await nasduck.close_all()
+            self.assertNotIn(first.session, await nasduck.sessions())
+            self.assertNotIn(second.session, await nasduck.sessions())
             with self.assertRaises(NoSessionError):
                 await first.state()
             with self.assertRaises(NoSessionError):
@@ -888,14 +888,14 @@ class IntegrationTests(unittest.TestCase):
             )
             await asyncio.sleep(0.05)
 
-            await asyncio.wait_for(tui_test.close_all(), timeout=2)
+            await asyncio.wait_for(nasduck.close_all(), timeout=2)
             with self.assertRaises(ExpectationError) as raised:
                 await wait
             self.assertRegex(
                 str(raised.exception),
                 r"operation was cancelled|session exited before",
             )
-            self.assertNotIn(su.session, await tui_test.sessions())
+            self.assertNotIn(su.session, await nasduck.sessions())
 
         run(scenario())
 
@@ -1118,14 +1118,14 @@ class IntegrationTests(unittest.TestCase):
     def test_any_shared_handle_can_close_a_reopened_named_session(self):
         async def scenario():
             name = unique_session("shared-close")
-            first = TuiTest(name)
-            second = TuiTest(name)
+            first = Nasduck(name)
+            second = Nasduck(name)
             try:
                 await first.open(shell=SHELL)
                 await first.close()
                 await second.open(shell=SHELL)
                 await first.close()
-                self.assertNotIn(name, await tui_test.sessions())
+                self.assertNotIn(name, await nasduck.sessions())
             finally:
                 await second.close_quiet()
 
@@ -1134,7 +1134,7 @@ class IntegrationTests(unittest.TestCase):
     def test_snapshot_lands_in_client_cwd(self):
         async def scenario():
             original = os.getcwd()
-            snap_root = tempfile.mkdtemp(prefix="tui-test-snap-")
+            snap_root = tempfile.mkdtemp(prefix="nasduck-snap-")
             name = f"snap-{os.path.basename(snap_root)}"
             try:
                 async with self._client() as su:

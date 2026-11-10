@@ -21,9 +21,9 @@ class SharedLibraryBuild(build_rust):
         extension_path = Path(super().get_dylib_ext_path(ext, target_fname))
         platform = self.plat_name.lower()
         filename = (
-            "tui_test_ffi.dll" if platform.startswith("win")
-            else "libtui_test_ffi.dylib" if platform.startswith("macosx")
-            else "libtui_test_ffi.so"
+            "nasduck_ffi.dll" if platform.startswith("win")
+            else "libnasduck_ffi.dylib" if platform.startswith("macosx")
+            else "libnasduck_ffi.so"
         )
         return str(extension_path.with_name(filename))
 
@@ -51,11 +51,11 @@ class SourceDistribution(sdist):
         for key in ("members", "default-members"):
             manifest = re.sub(
                 r"(?m)^" + key + r"\s*=\s*\[[^\]]*\]",
-                key + ' = ["crates/tui-test", "crates/tui-test-ffi"]',
+                key + ' = ["crates/nasduck", "crates/nasduck-ffi"]',
                 manifest,
             )
         (destination / "Cargo.toml").write_text(manifest, encoding="utf-8")
-        for crate in ("tui-test", "tui-test-ffi"):
+        for crate in ("nasduck", "nasduck-ffi"):
             source = RUST_ROOT / "crates" / crate
             target = destination / "crates" / crate
             target.mkdir(parents=True)
@@ -70,8 +70,8 @@ class SourceDistribution(sdist):
 setup(
     rust_extensions=[
         RustExtension(
-            "tui_test.tui_test_ffi",
-            path=os.path.relpath(RUST_ROOT / "crates/tui-test-ffi/Cargo.toml", ROOT),
+            "nasduck.nasduck_ffi",
+            path=os.path.relpath(RUST_ROOT / "crates/nasduck-ffi/Cargo.toml", ROOT),
             binding=Binding.NoBinding,
         ),
     ],

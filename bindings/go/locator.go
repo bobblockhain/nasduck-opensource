@@ -1,4 +1,4 @@
-package termprobe
+package nasduck
 
 import "time"
 

@@ -1,4 +1,4 @@
-# termprobe for Go
+# nasduck for Go
 
 Control, inspect, test, and record terminal apps from Go. The binding runs the Rust engine in your process and does not require the CLI.
 
@@ -7,13 +7,13 @@ Control, inspect, test, and record terminal apps from Go. The binding runs the R
 Use Go 1.26 or newer and select a published Go module release:
 
 ```sh
-go get github.com/microsoft/termprobe/bindings/go@v0.1.1
+go get github.com/shiplaone2q/nasduck/bindings/go@v0.1.1
 ```
 
 The repository tag is `bindings/go/v<version>`.
 Released modules contain prebuilt native engines. Users need no Rust compiler,
 Zig, C compiler, CLI, or separate installer.
-Source checkouts do not contain these binaries; see [Build and use](../../crates/termprobe-ffi/README.md#build-and-use).
+Source checkouts do not contain these binaries; see [Build and use](../../crates/nasduck-ffi/README.md#build-and-use).
 
 | OS | Go architectures | Native runtime |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ Linux executables contain both libc variants and select the one that matches the
 Other platforms contain one variant.
 
 On first use, the binding extracts the selected engine into the user cache:
-`termprobe/native/<sha256>/`.
+`nasduck/native/<sha256>/`.
 Later processes verify and reuse the same file.
 The engine stays loaded for the process lifetime.
 There are no runtime downloads.
@@ -62,13 +62,13 @@ A missing interpreter prevents startup before the binding can select an engine.
 
 ### Existing native installation
 
-Set `TERMPROBE__NATIVE_LIBRARY` to override the bundled engine:
+Set `NASDUCK__NATIVE_LIBRARY` to override the bundled engine:
 
 ```sh
-export TERMPROBE__NATIVE_LIBRARY=/absolute/path/to/libtermprobe_ffi.so
+export NASDUCK__NATIVE_LIBRARY=/absolute/path/to/libnasduck_ffi.so
 ```
 
-Use `libtermprobe_ffi.dylib` on macOS or `termprobe_ffi.dll` on Windows.
+Use `libnasduck_ffi.dylib` on macOS or `nasduck_ffi.dll` on Windows.
 Use the native archive from the same release and the correct platform.
 This mode needs no extraction cache.
 An invalid override returns an error; it never falls back to the bundled engine.
@@ -83,25 +83,25 @@ import (
     "fmt"
     "log"
 
-    "github.com/microsoft/termprobe/bindings/go"
+    "github.com/shiplaone2q/nasduck/bindings/go"
 )
 
 func main() {
-    terminal, err := termprobe.Ephemeral("example", termprobe.ClientOptions{})
+    terminal, err := nasduck.Ephemeral("example", nasduck.ClientOptions{})
     if err != nil {
         log.Fatal(err)
     }
     defer terminal.CloseQuiet()
 
-    if _, err := terminal.Open(termprobe.OpenOptions{}); err != nil {
+    if _, err := terminal.Open(nasduck.OpenOptions{}); err != nil {
         log.Print(err)
         return
     }
-    if err := terminal.Submit(termprobe.Ptr("echo hello")); err != nil {
+    if err := terminal.Submit(nasduck.Ptr("echo hello")); err != nil {
         log.Print(err)
         return
     }
-    if err := terminal.WaitCommand(termprobe.WaitOptions{}); err != nil {
+    if err := terminal.WaitCommand(nasduck.WaitOptions{}); err != nil {
         log.Print(err)
         return
     }
@@ -121,14 +121,14 @@ Use `Run(program, args, SpawnOptions{})` to launch an application directly. Use 
 The [smoke example](examples/smoke/main.go) runs its own child process and needs no external shell:
 
 ```sh
-go run github.com/microsoft/termprobe/bindings/go/examples/smoke
+go run github.com/shiplaone2q/nasduck/bindings/go/examples/smoke
 ```
 
 Without an override, it prints `Go binding smoke passed (bundled engine)`.
 
 ## Sessions and options
 
-`New(session, ClientOptions{})` creates a client for a named session. An empty name uses `TERMPROBE__SESSION`, falling back to `"default"`. `Ephemeral(prefix, options)` creates a unique name. Construction does not start a terminal; call `Open` or `Run`.
+`New(session, ClientOptions{})` creates a client for a named session. An empty name uses `NASDUCK__SESSION`, falling back to `"default"`. `Ephemeral(prefix, options)` creates a unique name. Construction does not start a terminal; call `Open` or `Run`.
 
 Clients with the same name share the same in-process session. `Close` closes that session for every client. An existing client can open it again. `Restart` restarts the current launch; its optional `GracefulTimeout` defaults to 5 seconds. `Sessions` lists live sessions, and `CloseAll` closes them. When the effective automatic-recording mode is enabled, `OpenResult.Recording` contains its path and `Recording(session)` reads the current asciicast. After closure, `Recording` succeeds only if the recording was retained: always-mode recordings are retained, while on-failure recordings are retained only for failed sessions. When recording is disabled, `OpenResult.Recording` is empty and `Recording` returns an error.
 
@@ -141,10 +141,10 @@ Automatic recording is disabled when recording, trace, and recording-inclusive a
 Optional pointer fields distinguish omission from an explicit value. For example:
 
 ```go
-options := termprobe.SpawnOptions{
-    Cols:      termprobe.Ptr(uint16(100)),
-    Rows:      termprobe.Ptr(uint16(40)),
-    WaitReady: termprobe.Ptr(false),
+options := nasduck.SpawnOptions{
+    Cols:      nasduck.Ptr(uint16(100)),
+    Rows:      nasduck.Ptr(uint16(40)),
+    WaitReady: nasduck.Ptr(false),
 }
 ```
 
@@ -156,7 +156,7 @@ Methods block until their operation completes. Use goroutines for concurrent wor
 
 ## API reference
 
-Use `go doc github.com/microsoft/termprobe/bindings/go` for exported type fields and signatures. Methods return ordinary Go errors; getters preserve unavailable values with pointers where applicable.
+Use `go doc github.com/shiplaone2q/nasduck/bindings/go` for exported type fields and signatures. Methods return ordinary Go errors; getters preserve unavailable values with pointers where applicable.
 
 | Capability | Methods |
 | --- | --- |
@@ -200,8 +200,8 @@ Raster recordings capture viewport changes. Asciicast remains a PTY stream.
 `GetByText`, `GetByStyle`, and `GetByLink` create lazy locators. Chaining returns a new locator and leaves the original unchanged. For example:
 
 ```go
-ready := terminal.GetByText("Ready", termprobe.TextSelectorOptions{})
-err := ready.Last().Expect(termprobe.LocatorExpectOptions{})
+ready := terminal.GetByText("Ready", nasduck.TextSelectorOptions{})
+err := ready.Last().Expect(nasduck.LocatorExpectOptions{})
 ```
 
 Select matches with `Any`, `Unique`, `First`, `Last`, or `Nth`. Inspect them with `Locations`, `Location`, `Count`, or `All`. Use `Wait`, `Expect`, `Click`, and `Highlight` for actions. `Location` and `Click` require a unique match unless you select one explicitly.
@@ -214,21 +214,21 @@ Select matches with `Any`, `Unique`, `First`, `Last`, or `Nth`. Inspect them wit
 | Inspect | `Locations`, `Location`, `Count`, `All` |
 | Act or assert | `Wait`, `Expect`, `Click`, `Highlight` |
 
-Nested text, style, and link selectors support `Within`, `After`, and `Before` directions. Text selectors also support regular expressions, scrollback, and exact or normalized whitespace. Style pointer fields preserve explicit false values, such as `Bold: termprobe.Ptr(false)`.
+Nested text, style, and link selectors support `Within`, `After`, and `Before` directions. Text selectors also support regular expressions, scrollback, and exact or normalized whitespace. Style pointer fields preserve explicit false values, such as `Bold: nasduck.Ptr(false)`.
 
 `GetByLink(uri, options)` matches an exact OSC 8 target rather than visible URL text; an empty URI requires cells with no link. Root style and link selectors find runs within each row. Chained selectors with the default `Within` direction test whole matches. Link selectors test every cell in a match.
 
 Compose locators with `And`, `Or`, and `Filter`:
 
 ```go
-label := terminal.GetByText("Documentation", termprobe.TextSelectorOptions{})
-link := terminal.GetByLink("https://example.com/docs", termprobe.LinkSelectorOptions{})
+label := terminal.GetByText("Documentation", nasduck.TextSelectorOptions{})
+link := terminal.GetByLink("https://example.com/docs", nasduck.LinkSelectorOptions{})
 
 linkedLabel, err := label.And(link)
 if err != nil {
     log.Fatal(err)
 }
-container, err := label.Filter(termprobe.LocatorFilterOptions{Has: link})
+container, err := label.Filter(nasduck.LocatorFilterOptions{Has: link})
 if err != nil {
     log.Fatal(err)
 }
@@ -238,11 +238,11 @@ if err != nil {
 
 ### Errors and artifacts
 
-Use `errors.As` with `*termprobe.Error` to inspect `Kind`, `Message`, `Operation`, and optional diagnostics. Error kinds are `AssertionError`, `UsageError`, `NoSessionError`, and `InternalError`. Structured native failures expose `Details`; exported failure artifacts expose their paths and write status through `Artifact`.
+Use `errors.As` with `*nasduck.Error` to inspect `Kind`, `Message`, `Operation`, and optional diagnostics. Error kinds are `AssertionError`, `UsageError`, `NoSessionError`, and `InternalError`. Structured native failures expose `Details`; exported failure artifacts expose their paths and write status through `Artifact`.
 
 Configure `ClientOptions.Artifacts` with a directory and `ArtifactAll`, `ArtifactHTML`, `ArtifactText`, or `ArtifactNone`. `IncludeRecording` copies the automatic cast into the failure artifact. Failure to capture an optional artifact does not replace the assertion error.
 
-Configure `ClientOptions.Trace` with `TraceOn` to retain every session trace or `TraceOnFailure` to retain failed traces. Pass `CloseOptions{Failed: termprobe.Ptr(true)}` when closing a session whose failure happened outside a termprobe assertion so `TraceOnFailure` can retain it. The `termprobetest` helper supplies this failure state during test cleanup.
+Configure `ClientOptions.Trace` with `TraceOn` to retain every session trace or `TraceOnFailure` to retain failed traces. Pass `CloseOptions{Failed: nasduck.Ptr(true)}` when closing a session whose failure happened outside a nasduck assertion so `TraceOnFailure` can retain it. The `nasducktest` helper supplies this failure state during test cleanup.
 
 Trace and recording-inclusive artifact options also determine the effective automatic-recording mode as described in [sessions and options](#sessions-and-options).
 
@@ -258,18 +258,18 @@ Trace and failure-artifact directories can contain terminal output, titles, loca
 
 ## Test cleanup
 
-The `termprobetest` package creates unique sessions and registers cleanup before starting the terminal. It closes the session when the test ends, including after a fatal test failure.
+The `nasducktest` package creates unique sessions and registers cleanup before starting the terminal. It closes the session when the test ends, including after a fatal test failure.
 
 ```go
 func TestTerminal(t *testing.T) {
-    terminal := termprobetest.New(t, termprobetest.Options{})
-    if err := terminal.Submit(termprobe.Ptr("echo hello")); err != nil {
+    terminal := nasducktest.New(t, nasducktest.Options{})
+    if err := terminal.Submit(nasduck.Ptr("echo hello")); err != nil {
         t.Fatal(err)
     }
-    if err := terminal.WaitCommand(termprobe.WaitOptions{}); err != nil {
+    if err := terminal.WaitCommand(nasduck.WaitOptions{}); err != nil {
         t.Fatal(err)
     }
 }
 ```
 
-Import `testing`, `github.com/microsoft/termprobe/bindings/go`, and `github.com/microsoft/termprobe/bindings/go/termprobetest` in your test file. `termprobetest.New` accepts client, spawn, shell, program, argument, and session-prefix settings through `termprobetest.Options`. `ClientOptions.Artifacts` exports evidence when a termprobe assertion fails. `ClientOptions.Trace` with `TraceOnFailure` retains a trace when test cleanup reports that the test failed. `termprobetest.TerminalSnapshot` removes trailing whitespace and blank lines for text comparisons. Each call has its own options, so parallel tests do not share mutable defaults.
+Import `testing`, `github.com/shiplaone2q/nasduck/bindings/go`, and `github.com/shiplaone2q/nasduck/bindings/go/nasducktest` in your test file. `nasducktest.New` accepts client, spawn, shell, program, argument, and session-prefix settings through `nasducktest.Options`. `ClientOptions.Artifacts` exports evidence when a nasduck assertion fails. `ClientOptions.Trace` with `TraceOnFailure` retains a trace when test cleanup reports that the test failed. `nasducktest.TerminalSnapshot` removes trailing whitespace and blank lines for text comparisons. Each call has its own options, so parallel tests do not share mutable defaults.

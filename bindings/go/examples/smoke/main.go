@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	termprobe "github.com/microsoft/termprobe/bindings/go"
+	nasduck "github.com/shiplaone2q/nasduck/bindings/go"
 )
 
 func main() {
@@ -27,14 +27,14 @@ func main() {
 		os.Exit(1)
 	}
 	source := "bundled"
-	if os.Getenv("TERMPROBE__NATIVE_LIBRARY") != "" {
+	if os.Getenv("NASDUCK__NATIVE_LIBRARY") != "" {
 		source = "override"
 	}
 	fmt.Printf("Go binding smoke passed (%s engine)\n", source)
 }
 
 func smoke() error {
-	terminal, err := termprobe.Ephemeral("smoke", termprobe.ClientOptions{Recording: &termprobe.AutomaticRecording{Mode: termprobe.RecordingDisabled}})
+	terminal, err := nasduck.Ephemeral("smoke", nasduck.ClientOptions{Recording: &nasduck.AutomaticRecording{Mode: nasduck.RecordingDisabled}})
 	if err != nil {
 		return fmt.Errorf("create smoke terminal: %w", err)
 	}
@@ -43,27 +43,27 @@ func smoke() error {
 	if err != nil {
 		return fmt.Errorf("locate smoke executable: %w", err)
 	}
-	if _, err = terminal.Run(executable, []string{"--child"}, termprobe.SpawnOptions{WaitReady: termprobe.Ptr(false)}); err != nil {
+	if _, err = terminal.Run(executable, []string{"--child"}, nasduck.SpawnOptions{WaitReady: nasduck.Ptr(false)}); err != nil {
 		return fmt.Errorf("run smoke child: %w", err)
 	}
 	return exerciseTerminal(terminal)
 }
 
-func exerciseTerminal(terminal *termprobe.Client) error {
+func exerciseTerminal(terminal *nasduck.Client) error {
 	timeout := 10 * time.Second
-	if err := terminal.GetByText("go-binding-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: &timeout}); err != nil {
+	if err := terminal.GetByText("go-binding-ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{Timeout: &timeout}); err != nil {
 		return fmt.Errorf("wait for child readiness: %w", err)
 	}
-	if err := terminal.Submit(termprobe.Ptr("hello")); err != nil {
+	if err := terminal.Submit(nasduck.Ptr("hello")); err != nil {
 		return fmt.Errorf("submit child input: %w", err)
 	}
-	if err := terminal.GetByText("echo:hello", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: &timeout}); err != nil {
+	if err := terminal.GetByText("echo:hello", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{Timeout: &timeout}); err != nil {
 		return fmt.Errorf("expect child response: %w", err)
 	}
-	if err := terminal.Submit(termprobe.Ptr("quit")); err != nil {
+	if err := terminal.Submit(nasduck.Ptr("quit")); err != nil {
 		return fmt.Errorf("request child exit: %w", err)
 	}
-	if err := terminal.WaitExit(termprobe.WaitOptions{Timeout: &timeout}); err != nil {
+	if err := terminal.WaitExit(nasduck.WaitOptions{Timeout: &timeout}); err != nil {
 		return fmt.Errorf("wait for child exit: %w", err)
 	}
 	state, err := terminal.State()

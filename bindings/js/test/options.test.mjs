@@ -4,7 +4,7 @@ import { test } from "node:test";
 import {
   ExpectationError,
   NoSessionError,
-  Termprobe,
+  Nasduck,
   UsageError,
   uniqueSession,
 } from "../dist/index.js";
@@ -28,19 +28,19 @@ const evalArgs =
     : ["eval", "console.log('ready'); setInterval(() => {}, 1000)"];
 
 const ALL_TIMEOUT_ENV_VARS = [
-  "TERMPROBE__TIMEOUT_MS",
-  "TERMPROBE__EXPECT_TIMEOUT_MS",
-  "TERMPROBE__TIMEOUT_TEXT_MS",
-  "TERMPROBE__TIMEOUT_IDLE_MS",
-  "TERMPROBE__TIMEOUT_COMMAND_MS",
-  "TERMPROBE__TIMEOUT_EXIT_MS",
-  "TERMPROBE__TIMEOUT_READY_MS",
+  "NASDUCK__TIMEOUT_MS",
+  "NASDUCK__EXPECT_TIMEOUT_MS",
+  "NASDUCK__TIMEOUT_TEXT_MS",
+  "NASDUCK__TIMEOUT_IDLE_MS",
+  "NASDUCK__TIMEOUT_COMMAND_MS",
+  "NASDUCK__TIMEOUT_EXIT_MS",
+  "NASDUCK__TIMEOUT_READY_MS",
 ];
 
 const CLASSES = ["text", "idle", "command", "exit", "ready"];
 
 test("invalid capture backgrounds reject with UsageError before session lookup", async () => {
-  const terminal = new Termprobe(uniqueSession("invalid-capture-background"));
+  const terminal = new Nasduck(uniqueSession("invalid-capture-background"));
   for (const background of [
     "", "#12", "#ff00zz", "#12345678", "#12é34", "256,0,0", "rgb(-1,0,0)",
   ]) {
@@ -173,7 +173,7 @@ test("mouse helpers encode named buttons and modifiers", async () => {
   };
 
   try {
-    const su = new Termprobe("mouse-options");
+    const su = new Nasduck("mouse-options");
     await su.mouse.click(null, null, {
       onText: "OK",
       button: "right",
@@ -311,7 +311,7 @@ test("constructor screenHistoryLimit reaches open and run options", async () => 
     return { shell_pid: null, session: "history", ready: true, recording: "" };
   };
   try {
-    const su = new Termprobe("history", { screenHistoryLimit: 17 });
+    const su = new Nasduck("history", { screenHistoryLimit: 17 });
     await su.open();
     await su.run("program");
     assert.equal(calls[0][1].screenHistoryLimit, 17);
@@ -336,7 +336,7 @@ test("locator.location transports require-one to native", async () => {
     ];
   };
   try {
-    const su = new Termprobe("require-one-transport");
+    const su = new Nasduck("require-one-transport");
     const match = await su.getByText("target").location();
     assert.equal(match.text, "target");
     assert.equal(calls.length, 1);
@@ -380,7 +380,7 @@ test("native artifacts are preserved without recapturing the terminal", async ()
     return "unexpected.svg";
   };
   try {
-    const su = new Termprobe("structured-artifact", {
+    const su = new Nasduck("structured-artifact", {
       artifacts: { dir: "failure-output", onFailure: "all" },
     });
     await assert.rejects(su.getByText("missing").expect(), structured);
@@ -403,7 +403,7 @@ test("current errors without details do not synthesize failure artifacts", async
     throw new Error("unexpected live capture");
   };
   try {
-    const su = new Termprobe("no-details-artifact", {
+    const su = new Nasduck("no-details-artifact", {
       artifacts: { dir: ".", onFailure: "all" },
     });
     for (const [kind, ErrorClass] of [
@@ -412,7 +412,7 @@ test("current errors without details do not synthesize failure artifacts", async
       ["assertion", ExpectationError],
     ]) {
       const current = mapNativeError(new Error(
-        `__termprobe_native_error__:${JSON.stringify({ kind, message: "current failure" })}`,
+        `__nasduck_native_error__:${JSON.stringify({ kind, message: "current failure" })}`,
       ));
       NativeRuntime.prototype.findLocator = async () => { throw current; };
       await assert.rejects(su.getByText("missing").location(), (error) => {
@@ -447,7 +447,7 @@ test("restart forwards timeout and preserves result and errors", async () => {
   };
 
   try {
-    const su = new Termprobe("restart-options");
+    const su = new Nasduck("restart-options");
     assert.equal(await su.restart(), result);
     assert.equal(await su.restart({ gracefulTimeout: 123 }), result);
     await assert.rejects(
@@ -475,7 +475,7 @@ test("open and run do not retry or close on validation errors", async () => {
         throw error;
       };
       NativeRuntime.prototype.close = async () => { calls.push("close"); };
-      const terminal = new Termprobe(uniqueSession("invalid-spawn"));
+      const terminal = new Nasduck(uniqueSession("invalid-spawn"));
       const action = method === "open"
         ? terminal.open({ retries: 2 })
         : terminal.run("program", [], { retries: 2 });
@@ -504,7 +504,7 @@ test("open and run still clean up and retry transient failures", async () => {
         return result;
       };
       NativeRuntime.prototype.close = async () => { calls.push("close"); };
-      const terminal = new Termprobe(uniqueSession("retry-spawn"));
+      const terminal = new Nasduck(uniqueSession("retry-spawn"));
       assert.equal(
         await (method === "open"
           ? terminal.open({ retries: 2 })
@@ -520,14 +520,14 @@ test("open and run still clean up and retry transient failures", async () => {
 
 test("unknown timeout classes are rejected before native dispatch", async () => {
   assert.throws(() => timeoutsPayload({ comand: 100 }), /comand/);
-  assert.throws(() => new Termprobe("s", { timeouts: { txt: 100 } }), /txt/);
-  const su = new Termprobe(uniqueSession("bad-open-timeout"));
+  assert.throws(() => new Nasduck("s", { timeouts: { txt: 100 } }), /txt/);
+  const su = new Nasduck(uniqueSession("bad-open-timeout"));
   await assert.rejects(() => su.open({ timeouts: { txt: 100 } }), /txt/);
   await su.closeQuiet();
 });
 
 test("session timeout defaults are visible in typed state", async () => {
-  const su = new Termprobe(uniqueSession("typed-timeouts"));
+  const su = new Nasduck(uniqueSession("typed-timeouts"));
   try {
     await su.open({
       shell,
@@ -546,7 +546,7 @@ test("session timeout defaults are visible in typed state", async () => {
 });
 
 test("constructor and per-run profile objects recolor the terminal", async () => {
-  const su = new Termprobe(uniqueSession("typed-profile"), {
+  const su = new Nasduck(uniqueSession("typed-profile"), {
     profile: { colors: { red: "#010203" } },
   });
   const argsFor = (marker) =>
@@ -581,7 +581,7 @@ test("constructor and per-run profile objects recolor the terminal", async () =>
 });
 
 test("constructor and per-call backends reach native sessions", async () => {
-  const su = new Termprobe(uniqueSession("typed-backend"), {
+  const su = new Nasduck(uniqueSession("typed-backend"), {
     backend: "ghostty",
   });
   try {
@@ -596,7 +596,7 @@ test("constructor and per-call backends reach native sessions", async () => {
 });
 
 test("client and per-call timeout precedence reaches native waits", async () => {
-  const su = new Termprobe(uniqueSession("typed-timeout-precedence"), {
+  const su = new Nasduck(uniqueSession("typed-timeout-precedence"), {
     timeouts: { text: 120 },
   });
   try {
@@ -620,7 +620,7 @@ test("client and per-call timeout precedence reaches native waits", async () => 
 });
 
 test("wait and expectation failures retain operation names", async () => {
-  const su = new Termprobe(uniqueSession("typed-operation-errors"));
+  const su = new Nasduck(uniqueSession("typed-operation-errors"));
   try {
     await su.run(process.execPath, evalArgs);
     await su.getByText("ready").wait({ timeout: 2000 });
@@ -642,7 +642,7 @@ test("wait and expectation failures retain operation names", async () => {
 });
 
 test("typed validation and engine usage errors map to UsageError", async () => {
-  const locator = new Termprobe(uniqueSession("invalid-locator-direction"));
+  const locator = new Nasduck(uniqueSession("invalid-locator-direction"));
   assert.throws(
     () => locator.getByText("parent").getByText("child", { direction: "sideways" }),
     /locator direction must be within, after, or before/,
@@ -652,21 +652,21 @@ test("typed validation and engine usage errors map to UsageError", async () => {
     /locator direction requires a parent locator/,
   );
 
-  const invalid = new Termprobe(uniqueSession("typed-invalid-size"));
+  const invalid = new Nasduck(uniqueSession("typed-invalid-size"));
   await assert.rejects(
     invalid.open({ cols: -1 }),
     (error) => error instanceof UsageError && error.kind === "usage",
   );
   await invalid.closeQuiet();
 
-  const invalidShell = new Termprobe(uniqueSession("typed-invalid-shell"));
+  const invalidShell = new Nasduck(uniqueSession("typed-invalid-shell"));
   await assert.rejects(
     invalidShell.open({ shell: "definitely-not-a-shell" }),
     (error) => error instanceof UsageError && error.kind === "usage",
   );
   await invalidShell.closeQuiet();
 
-  const su = new Termprobe(uniqueSession("typed-invalid-regex"));
+  const su = new Nasduck(uniqueSession("typed-invalid-regex"));
   try {
     await su.run(process.execPath, evalArgs);
     await assert.rejects(
@@ -679,7 +679,7 @@ test("typed validation and engine usage errors map to UsageError", async () => {
 });
 
 test("expectExitCode rejects unsafe JavaScript numbers as UsageError", async () => {
-  const su = Termprobe.ephemeral("invalid-exit-code");
+  const su = Nasduck.ephemeral("invalid-exit-code");
   try {
     for (const code of [
       1.5,
@@ -724,7 +724,7 @@ test("native argument conversion errors map to UsageError", async () => {
 });
 
 test("close remains idempotent without a prior open", async () => {
-  const su = Termprobe.ephemeral("never-opened");
+  const su = Nasduck.ephemeral("never-opened");
   await su.close();
   await su.close();
   await su.closeQuiet();

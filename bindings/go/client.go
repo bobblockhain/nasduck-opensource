@@ -1,4 +1,4 @@
-package termprobe
+package nasduck
 
 import (
 	"crypto/rand"
@@ -20,10 +20,10 @@ type Client struct {
 	Mouse    *Mouse
 }
 
-// New resolves an empty session from TERMPROBE__SESSION, then "default".
+// New resolves an empty session from NASDUCK__SESSION, then "default".
 func New(session string, options ClientOptions) (*Client, error) {
 	if session == "" {
-		session = os.Getenv("TERMPROBE__SESSION")
+		session = os.Getenv("NASDUCK__SESSION")
 	}
 	if session == "" {
 		session = "default"

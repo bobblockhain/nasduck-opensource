@@ -1,11 +1,11 @@
-# termprobe for Python
+# nasduck for Python
 
 Control, inspect, and test terminal apps from Python.
 
 ## Install
 
 ```sh
-pip install termprobe
+pip install nasduck
 ```
 
 Python 3.8+ is supported.
@@ -13,7 +13,7 @@ Python 3.8+ is supported.
 The wheel contains an ordinary shared library. Python uses generated `ctypes`
 declarations for its typed C ABI. The package has no Python native extension.
 
-Set `TERMPROBE__NATIVE_LIBRARY` to an absolute library path to override the bundled
+Set `NASDUCK__NATIVE_LIBRARY` to an absolute library path to override the bundled
 library. The loader checks the ABI version before the first operation.
 
 ### Build from source
@@ -40,13 +40,13 @@ libc linkage for musl shared libraries.
 For a checkout, use the shared library directly:
 
 ```sh
-env -u CARGO_TARGET_DIR cargo build -p termprobe-ffi
+env -u CARGO_TARGET_DIR cargo build -p nasduck-ffi
 PYTHONPATH=bindings/python/src \
-TERMPROBE__NATIVE_LIBRARY="$PWD/target/debug/libtermprobe_ffi.dylib" \
+NASDUCK__NATIVE_LIBRARY="$PWD/target/debug/libnasduck_ffi.dylib" \
 python bindings/python/examples/shared_library.py
 ```
 
-Use `libtermprobe_ffi.so` on Linux or `termprobe_ffi.dll` on Windows.
+Use `libnasduck_ffi.so` on Linux or `nasduck_ffi.dll` on Windows.
 The example proves that a copied screen remains valid after the session closes.
 
 Each asynchronous call uses a separate worker thread. A blocked wait cannot
@@ -62,9 +62,9 @@ cleanup; cancellation does not confirm that a spawn stopped.
 ## Quick start
 
 ```python
-from termprobe import Termprobe
+from nasduck import Nasduck
 
-async with Termprobe.ephemeral() as terminal:
+async with Nasduck.ephemeral() as terminal:
     await terminal.run("my-app")
     await terminal.get_by_text("Ready").expect()
     await terminal.get_by_text("Continue").click()
@@ -73,22 +73,22 @@ async with Termprobe.ephemeral() as terminal:
 
 ## API
 
-### `Termprobe`
+### `Nasduck`
 
 ```python
-Termprobe(session=None, *, backend=None, timeouts=None, profile=None, screen_history_limit=None, artifacts=None, recording=None)
+Nasduck(session=None, *, backend=None, timeouts=None, profile=None, screen_history_limit=None, artifacts=None, recording=None)
 ```
 
 | Option | Type | Default |
 | --- | --- | --- |
-| `session` | `str` | `TERMPROBE__SESSION` or `"default"` |
+| `session` | `str` | `NASDUCK__SESSION` or `"default"` |
 | `backend` | `"alacritty" \| "ghostty" \| "rio" \| "xtermjs"` | `"alacritty"` |
 | `timeouts` | `Timeouts \| dict` | built-in defaults |
 | `profile` | `Profile \| dict` | built-in profile |
 | `screen_history_limit` | `int \| None` | core default |
 | `artifacts` | `dict` | off |
 | `recording` | `AutomaticRecording \| dict` (directory only) | default recording directory |
-| `trace` | `TraceOptions \| dict` | `{"mode": "off", "directory": ".termprobe/traces"}` |
+| `trace` | `TraceOptions \| dict` | `{"mode": "off", "directory": ".nasduck/traces"}` |
 
 Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Users can open `trace.html`; agents should read `trace.md`, `trace.json`, and `timeline.json`.
 
@@ -106,13 +106,13 @@ Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Use
 
 | Method | Description |
 | --- | --- |
-| `Termprobe.ephemeral(prefix=None, **options)` | Create a unique session. |
+| `Nasduck.ephemeral(prefix=None, **options)` | Create a unique session. |
 | `await open(**options)` | Open a shell. |
 | `await run(program, *args, **options)` | Run a program. |
 | `await restart(graceful_timeout=5000)` | Restart the session. |
 | `await close()` | Close the session. |
 | `await close_quiet()` | Close without raising. |
-| `async with Termprobe()` | Close on exit. |
+| `async with Nasduck()` | Close on exit. |
 
 `open()` options are `shell`, `backend`, `cols`, `rows`, `cwd`, `env`, `wait_ready`, `restart`, `retries`, `profile`, and `timeouts`. `run()` accepts the same options except `shell`.
 
@@ -217,7 +217,7 @@ The extension selects the format: `.png` or `.apng`, `.gif`, `.mp4`, or `.cast`.
 Locators resolve against the latest terminal screen before every read or action.
 
 ```python
-from termprobe import TextStyle
+from nasduck import TextStyle
 
 save = (
     terminal
@@ -274,7 +274,7 @@ match may cover the whole candidate. For partially linked `"Docs"`,
 `filter(has=link)` keeps the whole word, `get_by_link(uri)` rejects it, and
 `and_(link)` returns its linked cells.
 
-Use locators from one `Termprobe`. Composition leaves them unchanged and reads
+Use locators from one `Nasduck`. Composition leaves them unchanged and reads
 one fresh snapshot when used. Selection order matters: `a.first().and_(b)`
 differs from `a.and_(b).first()`. Any `full` branch includes scrollback for the
 whole query. Errors propagate.
@@ -352,7 +352,7 @@ await terminal.mouse.click(10, 5, button="right", ctrl=True)
 
 ### Test helpers
 
-Import from `termprobe.testing`.
+Import from `nasduck.testing`.
 
 | Function | Description |
 | --- | --- |
@@ -371,7 +371,7 @@ Import from `termprobe.testing`.
 `DEFAULT_SHELL` is the platform default.
 
 ```python
-from termprobe.testing import terminal
+from nasduck.testing import terminal
 
 async with terminal(program=("my-app",)) as app:
     await app.get_by_text("Ready").expect()
@@ -380,9 +380,9 @@ async with terminal(program=("my-app",)) as app:
 ### Configuration
 
 ```python
-from termprobe import AutomaticRecording, Colors, Profile, Timeouts
+from nasduck import AutomaticRecording, Colors, Profile, Timeouts
 
-terminal = Termprobe(
+terminal = Nasduck(
     profile=Profile(
         scrollback=500,
         colors=Colors(foreground="#ffffff", background="#000000"),
@@ -423,6 +423,6 @@ terminal = Termprobe(
 | `NoSessionError` | `3` |
 | `InternalError` | `5` |
 
-All errors extend `TermprobeError`. Structured native failures expose `details` and `artifact`; expectation errors continue to populate compatibility `terminal.text` and `terminal.screenshot` fields. Failure artifacts can contain terminal output, titles, locator operands, and recordings, so review them before uploading.
+All errors extend `NasduckError`. Structured native failures expose `details` and `artifact`; expectation errors continue to populate compatibility `terminal.text` and `terminal.screenshot` fields. Failure artifacts can contain terminal output, titles, locator operands, and recordings, so review them before uploading.
 
 Sessions are local to the current process and cannot be controlled by the CLI. Cancelling a task does not stop an active terminal operation.

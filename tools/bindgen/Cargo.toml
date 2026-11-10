@@ -1,5 +1,5 @@
 [package]
-name = "termprobe-bindgen"
+name = "nasduck-bindgen"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

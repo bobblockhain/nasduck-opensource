@@ -1,10 +1,10 @@
-//go:build termprobe_abi_check && cgo
+//go:build nasduck_abi_check && cgo
 
 package native
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/../../../../crates/termprobe-ffi/include
-#include "termprobe.h"
+#cgo CFLAGS: -I${SRCDIR}/../../../../crates/nasduck-ffi/include
+#include "nasduck.h"
 */
 import "C"
 

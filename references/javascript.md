@@ -1,19 +1,19 @@
 # JavaScript
 
-Use `@microsoft/termprobe` from JavaScript or TypeScript.
+Use `@shiplaone2q/nasduck` from JavaScript or TypeScript.
 
 [Back to the skill](../SKILL.md)
 
 ## Start
 
 ```sh
-npm install @microsoft/termprobe
+npm install @shiplaone2q/nasduck
 ```
 
 ```js
-import { Termprobe } from "@microsoft/termprobe";
+import { Nasduck } from "@shiplaone2q/nasduck";
 
-const terminal = Termprobe.ephemeral();
+const terminal = Nasduck.ephemeral();
 try {
   await terminal.run("my-app");
   await terminal.getByText("Ready").expect();
@@ -125,7 +125,7 @@ Mouse: `click`, `move`, `down`, `up`, `drag`, and `scroll`.
 ## Test helpers
 
 ```js
-import { withTerminal } from "@microsoft/termprobe/test";
+import { withTerminal } from "@shiplaone2q/nasduck/test";
 
 await withTerminal({ program: ["my-app"] }, async (app) => {
   await app.getByText("Ready").expect();
@@ -136,6 +136,6 @@ Helpers: `createTerminal`, `withTerminal`, `closeAllTracked`, `setTerminalDefaul
 
 ## Errors
 
-`ExpectationError`, `UsageError`, `NoSessionError`, and `InternalError` extend `TermprobeError`.
+`ExpectationError`, `UsageError`, `NoSessionError`, and `InternalError` extend `NasduckError`.
 
-Full API: [bindings/js/README.md](https://github.com/microsoft/termprobe/blob/main/bindings/js/README.md)
+Full API: [bindings/js/README.md](https://github.com/shiplaone2q/nasduck/blob/main/bindings/js/README.md)

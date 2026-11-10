@@ -462,7 +462,7 @@ mod tests {
     fn owned_inputs_enums_and_result_types_drive_javascript() {
         let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
         let mut models = Models::load(root).unwrap();
-        let source = fs::read_to_string(root.join("crates/termprobe/src/api.rs")).unwrap();
+        let source = fs::read_to_string(root.join("crates/nasduck/src/api.rs")).unwrap();
         models
             .parse(&source.replace("ExitCode(Option<i32>)", "ExitCode(Option<String>)"))
             .unwrap();

@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from typing import get_type_hints
 
-from tui_test import Cursor, Locator, NoSessionError, State, TuiTest, UsageError, _native, unique_session
+from nasduck import Cursor, Locator, NoSessionError, State, Nasduck, UsageError, _native, unique_session
 
 
 INVALID_CAPTURE_BACKGROUNDS = (
@@ -34,7 +34,7 @@ class CaptureBackgroundTests(unittest.TestCase):
 
     def test_invalid_backgrounds_raise_public_usage_errors(self):
         async def scenario():
-            terminal = TuiTest(unique_session("invalid-background"))
+            terminal = Nasduck(unique_session("invalid-background"))
             for background in INVALID_CAPTURE_BACKGROUNDS:
                 for capture in (
                     lambda: terminal.screenshot("screen.svg", background=background),
@@ -58,10 +58,10 @@ class _IndexValue:
 class NativeSurfaceTests(unittest.TestCase):
     def test_public_client_omits_one_shot_text_methods(self):
         for name in ("find_text", "wait_text", "expect_text"):
-            self.assertFalse(hasattr(TuiTest, name), name)
+            self.assertFalse(hasattr(Nasduck, name), name)
         for method in (
-            TuiTest.get_by_text,
-            TuiTest.get_by_style,
+            Nasduck.get_by_text,
+            Nasduck.get_by_style,
             Locator.get_by_text,
             Locator.get_by_style,
         ):
@@ -148,14 +148,14 @@ class NativeSurfaceTests(unittest.TestCase):
             with self.assertRaises(_native.NativeUsageError) as raised:
                 await awaitable
             envelope = json.loads(
-                raised.exception._tui_test_error_json
+                raised.exception._nasduck_error_json
             )
             self.assertEqual(envelope["kind"], "usage")
             self.assertIn("cols", envelope["message"])
             self.assertFalse(
                 hasattr(
                     _native.NativeUsageError,
-                    "_tui_test_error_json",
+                    "_nasduck_error_json",
                 )
             )
 
@@ -163,7 +163,7 @@ class NativeSurfaceTests(unittest.TestCase):
 
     def test_public_usage_and_no_session_errors_use_current_envelopes(self):
         async def scenario():
-            terminal = TuiTest(unique_session("current-errors"))
+            terminal = Nasduck(unique_session("current-errors"))
             for operation, public_type, kind in (
                 (lambda: terminal.resize(-1, 24), UsageError, "usage"),
                 (terminal.text, NoSessionError, "no_session"),
@@ -175,7 +175,7 @@ class NativeSurfaceTests(unittest.TestCase):
                     self.assertIsNone(error.details)
                     self.assertIsNone(error.artifact)
                     self.assertFalse(hasattr(error, "terminal"))
-                    raw = error.__cause__._tui_test_error_json
+                    raw = error.__cause__._nasduck_error_json
                     self.assertIsInstance(raw, str)
                     envelope = json.loads(raw)
                     self.assertEqual(envelope["kind"], kind)
@@ -268,13 +268,13 @@ class NativeStubTests(unittest.TestCase):
             "shape": str,
             "color": str,
         })
-        self.assertIs(get_type_hints(TuiTest.get_cursor)["return"], Cursor)
+        self.assertIs(get_type_hints(Nasduck.get_cursor)["return"], Cursor)
         self.assertIs(get_type_hints(State)["cursor"], Cursor)
         stub = (
-            Path(__file__).resolve().parents[1] / "src" / "tui_test" / "_native.pyi"
+            Path(__file__).resolve().parents[1] / "src" / "nasduck" / "_native.pyi"
         ).read_text(encoding="utf-8")
         self.assertIn(
-            "def get_cursor(self) -> typing.Awaitable[tui_test.Cursor]: ...",
+            "def get_cursor(self) -> typing.Awaitable[nasduck.Cursor]: ...",
             stub,
         )
 
@@ -282,7 +282,7 @@ class NativeStubTests(unittest.TestCase):
         stub = (
             Path(__file__).resolve().parents[1]
             / "src"
-            / "tui_test"
+            / "nasduck"
             / "_native.pyi"
         ).read_text(encoding="utf-8")
         self.assertNotIn("async def ", stub)
@@ -300,16 +300,16 @@ class NativeStubTests(unittest.TestCase):
         stub = (
             Path(__file__).resolve().parents[1]
             / "src"
-            / "tui_test"
+            / "nasduck"
             / "_native.pyi"
         ).read_text(encoding="utf-8")
-        self.assertIn("import tui_test\n", stub)
+        self.assertIn("import nasduck\n", stub)
         for method in ("open", "run", "restart"):
             declaration = next(
                 line for line in stub.splitlines()
                 if line.strip().startswith(f"def {method}(")
             )
-            self.assertIn("typing.Awaitable[tui_test.OpenResult]", declaration)
+            self.assertIn("typing.Awaitable[nasduck.OpenResult]", declaration)
 
 
 if __name__ == "__main__":

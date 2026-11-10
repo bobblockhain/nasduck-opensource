@@ -52,7 +52,7 @@ test("module assembly includes all targets without changing source", async t => 
   assert.deepEqual(contents.get("LICENSE"), fs.readFileSync(path.join(fixture.root, "LICENSE")));
   assert.equal([...contents.keys()].filter(name => /bundled_.*\.go$/.test(name)).length, 5);
   assert.equal([...contents.keys()].filter(name => name.endsWith(".tar.gz")).length, 7);
-  const filename = path.join(fixture.root, "termprobe-go-1.2.3.tar.gz");
+  const filename = path.join(fixture.root, "nasduck-go-1.2.3.tar.gz");
   assert.ok(fs.existsSync(`${filename}.sha256`));
   const archived = await packages.readArchive(fs.readFileSync(filename));
   assert.deepEqual(new Map(archived.map(entry => [entry.name, entry.data])), contents);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Termprobe, UsageError, NoSessionError } from "../dist/index.js";
+import { Nasduck, UsageError, NoSessionError } from "../dist/index.js";
 import { NativeSession } from "../native/index.js";
 import koffi from "koffi";
 import { types } from "../native/abi.js";
@@ -26,7 +26,7 @@ test("viewport results preserve safe counts and reject lost precision", async ()
 });
 
 test("native scroll validates signed integer amounts", async () => {
-  const terminal = Termprobe.ephemeral();
+  const terminal = Nasduck.ephemeral();
   const native = new NativeSession(`${terminal.session}-native`);
   for (const amount of [1.5, NaN, Infinity, -Infinity, 2147483648, -2147483649, "1", true]) {
     await assert.rejects(terminal.scroll(amount), UsageError);
@@ -38,7 +38,7 @@ test("native scroll validates signed integer amounts", async () => {
 });
 
 test("native history view is independent of full text", async () => {
-  const terminal = Termprobe.ephemeral(undefined, { backend: "alacritty" });
+  const terminal = Nasduck.ephemeral(undefined, { backend: "alacritty" });
   try {
     await terminal.run(process.execPath, [typeof globalThis.Deno === "undefined" ? "-e" : "eval",
       "for(let i=0;i<40;i++)console.log('history-'+i);setInterval(()=>{},1000)",

@@ -17,7 +17,7 @@ function freeze(value) {
 
 test("normalization exposes display models, preserves exact input, and never guesses a missing screen", async () => {
   const model = parse();
-  assert.equal(model.title, "termprobe: deployment-wizard");
+  assert.equal(model.title, "nasduck: deployment-wizard");
   assert.equal(model.frames[0].viewBox, "7 11 200 80");
   assert.equal(model.actions[0].frameIndex, undefined);
   assert.equal(model.actions[3].label, '"DEPLOY staging"');

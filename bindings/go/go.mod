@@ -1,4 +1,4 @@
-module github.com/microsoft/termprobe/bindings/go
+module github.com/shiplaone2q/nasduck/bindings/go
 
 go 1.26
 

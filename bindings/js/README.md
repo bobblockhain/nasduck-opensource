@@ -1,16 +1,16 @@
-# @microsoft/termprobe
+# @shiplaone2q/nasduck
 
 Control, inspect, and test terminal apps from JavaScript or TypeScript.
 
 ## Install
 
 ```sh
-npm install @microsoft/termprobe
+npm install @shiplaone2q/nasduck
 ```
 
 Node 20+ is supported. The package is ESM only. Bun and Deno support is best effort. Deno 2 needs local `node_modules` and `--allow-ffi`.
 
-Each platform package contains the `termprobe-ffi` shared library.
+Each platform package contains the `nasduck-ffi` shared library.
 The JavaScript adapter uses Koffi to call the same typed C ABI as Go and Python.
 It copies native results before it frees their Rust allocations.
 The library stays loaded until process exit on all supported platforms.
@@ -20,12 +20,12 @@ Each binding copy uses its own anonymous Koffi layouts, so copies can share one 
 Koffi supplies its own native addon; this package no longer builds a separate N-API adapter.
 Keep optional dependencies enabled during installation; they contain the platform binaries for both packages.
 The package needs no CLI.
-Set `TERMPROBE__NATIVE_LIBRARY` to an absolute path to select a library from the same source revision.
+Set `NASDUCK__NATIVE_LIBRARY` to an absolute path to select a library from the same source revision.
 
 For a local build, run `npm ci`, then `npm run build`.
 Use `npm run build:native:debug` for a debug build.
-These commands build `termprobe-ffi` and put the shared library in `native/`.
-Run `cargo run --locked -p termprobe-bindgen` from the repository root to regenerate the native declarations.
+These commands build `nasduck-ffi` and put the shared library in `native/`.
+Run `cargo run --locked -p nasduck-bindgen` from the repository root to regenerate the native declarations.
 
 For a distributable GNU Linux build, use:
 
@@ -41,9 +41,9 @@ Musl builds with `--zig` still use the local Rust and Zig toolchains.
 ## Quick start
 
 ```js
-import { Termprobe } from "@microsoft/termprobe";
+import { Nasduck } from "@shiplaone2q/nasduck";
 
-const terminal = Termprobe.ephemeral();
+const terminal = Nasduck.ephemeral();
 
 try {
   await terminal.run(process.execPath, [
@@ -59,22 +59,22 @@ try {
 
 ## API
 
-### `Termprobe`
+### `Nasduck`
 
 ```ts
-new Termprobe(session?: string, options?: ClientOptions)
+new Nasduck(session?: string, options?: ClientOptions)
 ```
 
 | Option | Type | Default |
 | --- | --- | --- |
-| `session` | `string` | `TERMPROBE__SESSION` or `"default"` |
+| `session` | `string` | `NASDUCK__SESSION` or `"default"` |
 | `backend` | `"alacritty" \| "ghostty" \| "rio" \| "xtermjs"` | `"alacritty"` |
 | `timeouts` | `Timeouts` | built-in defaults |
 | `profile` | `Profile` | built-in profile |
 | `screenHistoryLimit` | `number` | `10` |
 | `artifacts` | `{ dir, onFailure?, includeRecording? }` | off |
 | `recording` | `{ directory? }` | default recording directory |
-| `trace` | `{ mode?, directory? }` | `{ mode: "off", directory: ".termprobe/traces" }` |
+| `trace` | `{ mode?, directory? }` | `{ mode: "off", directory: ".nasduck/traces" }` |
 
 Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Users can open `trace.html`; agents should read `trace.md`, `trace.json`, and `timeline.json`.
 
@@ -92,7 +92,7 @@ Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Use
 
 | Method | Description |
 | --- | --- |
-| `Termprobe.ephemeral(prefix?, options?)` | Create a unique session. |
+| `Nasduck.ephemeral(prefix?, options?)` | Create a unique session. |
 | `open(options?)` | Open a shell. |
 | `run(program, args?, options?)` | Run a program. |
 | `restart(options?)` | Restart the session. |
@@ -251,7 +251,7 @@ match may cover the whole candidate. For partially linked `"Docs"`,
 `filter({ has: link })` keeps the whole word, `getByLink(uri)` rejects it,
 and `.and(link)` returns its linked cells.
 
-Use locators from one `Termprobe`. Composition leaves them unchanged and reads
+Use locators from one `Nasduck`. Composition leaves them unchanged and reads
 one fresh snapshot when used. Selection order matters: `a.first().and(b)`
 differs from `a.and(b).first()`. Any `full` branch includes scrollback for the
 whole query. Errors, including `unique()` failures, propagate.
@@ -329,7 +329,7 @@ await terminal.mouse.click(10, 5, { button: "right", ctrl: true });
 
 ### Test helpers
 
-Import from `@microsoft/termprobe/test`.
+Import from `@shiplaone2q/nasduck/test`.
 
 | Function | Description |
 | --- | --- |
@@ -348,7 +348,7 @@ Import from `@microsoft/termprobe/test`.
 `defaultShell` is the platform default.
 
 ```js
-import { withTerminal } from "@microsoft/termprobe/test";
+import { withTerminal } from "@shiplaone2q/nasduck/test";
 
 await withTerminal({ program: ["my-app"] }, async (terminal) => {
   await terminal.getByText("Ready").expect();
@@ -358,7 +358,7 @@ await withTerminal({ program: ["my-app"] }, async (terminal) => {
 ### Configuration
 
 ```js
-const terminal = new Termprobe("test", {
+const terminal = new Nasduck("test", {
   profile: {
     scrollback: 500,
     colors: { foreground: "#ffffff", background: "#000000" },
@@ -405,6 +405,6 @@ const terminal = new Termprobe("test", {
 | `NoSessionError` | `3` |
 | `InternalError` | `5` |
 
-All errors extend `TermprobeError` and include `kind` and `exitCode`. Structured native failures expose `details` and `artifact`; expectation errors continue to populate compatibility `terminal.text` and `terminal.screenshot` fields. Failure artifacts can contain terminal output, titles, locator operands, and recordings, so review them before uploading.
+All errors extend `NasduckError` and include `kind` and `exitCode`. Structured native failures expose `details` and `artifact`; expectation errors continue to populate compatibility `terminal.text` and `terminal.screenshot` fields. Failure artifacts can contain terminal output, titles, locator operands, and recordings, so review them before uploading.
 
 Sessions are local to the current process and cannot be controlled by the CLI. Cancelling a promise does not stop an active terminal operation.

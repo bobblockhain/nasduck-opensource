@@ -1,6 +1,6 @@
 import { isMainThread } from "node:worker_threads";
 import { InternalError, UsageError, makeError } from "./errors.js";
-import type { ErrorKind, TermprobeError } from "./errors.js";
+import type { ErrorKind, NasduckError } from "./errors.js";
 import type { FailureArtifactRef, FailureDetails } from "./types.js";
 import type {
   AutomaticRecordingOptions,
@@ -47,7 +47,7 @@ export type RuntimeLocatorNode = Omit<LocatorNode, "kind" | "direction"> & {
 export type RuntimeLocatorExpression = { nodes: RuntimeLocatorNode[]; root: number };
 export type RuntimeLocatorStyle = LocatorStyle;
 
-const ERROR_PREFIX = "__termprobe_native_error__:";
+const ERROR_PREFIX = "__nasduck_native_error__:";
 const USAGE_NAPI_CODES = new Set([
   "InvalidArg",
   "ObjectExpected",
@@ -89,7 +89,7 @@ async function importBinding(): Promise<NativeBinding> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
-      "failed to load the @microsoft/termprobe native library: " +
+      "failed to load the @shiplaone2q/nasduck native library: " +
         `${message}. Build it with \`npm run build:native\` (requires a Rust ` +
         "toolchain), or install a matching prebuilt platform package.",
       { cause: error },
@@ -152,7 +152,7 @@ function attachStructuredFailure(
   });
 }
 
-export function mapNativeError(error: unknown): TermprobeError {
+export function mapNativeError(error: unknown): NasduckError {
   const message = errorMessage(error);
   const encodedAt = message.indexOf(ERROR_PREFIX);
   if (encodedAt >= 0) {

@@ -3,10 +3,10 @@ import os
 import subprocess
 import unittest
 
-import tui_test
-from tui_test import TuiTest
+import nasduck
+from nasduck import Nasduck
 
-BIN = os.environ.get("TUI_TEST_BIN") or "tui-test"
+BIN = os.environ.get("NASDUCK_BIN") or "nasduck"
 
 MAPPING = {
     "open": [("client", "open")],
@@ -61,7 +61,7 @@ def _have_binary():
         return False
 
 
-@unittest.skipUnless(_have_binary(), "tui-test binary not available for agent-context")
+@unittest.skipUnless(_have_binary(), "nasduck binary not available for agent-context")
 class ConformanceTests(unittest.TestCase):
     def test_every_command_is_mapped_or_excluded(self):
         out = subprocess.run([BIN, "agent-context"], capture_output=True, check=True, text=True).stdout
@@ -72,16 +72,16 @@ class ConformanceTests(unittest.TestCase):
             if command in EXCLUDED:
                 continue
             self.assertIn(command, MAPPING, f"cli command '{command}' has no SDK mapping")
-            instance = TuiTest("conformance")
+            instance = Nasduck("conformance")
             for scope, attr in MAPPING[command]:
-                target = instance if scope == "client" else tui_test
+                target = instance if scope == "client" else nasduck
                 self.assertTrue(
                     hasattr(target, attr),
                     f"missing SDK member for '{command}': {scope}.{attr}",
                 )
 
     def test_keyboard_exposes_every_key_action(self):
-        keyboard = TuiTest("keyboard-conformance").keyboard
+        keyboard = Nasduck("keyboard-conformance").keyboard
         for method in ("press", "down", "repeat", "up"):
             self.assertTrue(hasattr(keyboard, method), method)
 
@@ -89,10 +89,10 @@ class ConformanceTests(unittest.TestCase):
         out = subprocess.run([BIN, "agent-context"], capture_output=True, check=True, text=True).stdout
         schema = json.loads(out)
         codes = schema["exit_codes"]
-        self.assertEqual(tui_test.ExpectationError.exit_code, 1)
-        self.assertEqual(tui_test.UsageError.exit_code, 2)
-        self.assertEqual(tui_test.NoSessionError.exit_code, 3)
-        self.assertEqual(tui_test.InternalError.exit_code, 5)
+        self.assertEqual(nasduck.ExpectationError.exit_code, 1)
+        self.assertEqual(nasduck.UsageError.exit_code, 2)
+        self.assertEqual(nasduck.NoSessionError.exit_code, 3)
+        self.assertEqual(nasduck.InternalError.exit_code, 5)
         self.assertIn("1", codes)
         self.assertIn("3", codes)
 

@@ -1,8 +1,8 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$repository = "microsoft/termprobe"
-$binaryName = "termprobe.exe"
+$repository = "shiplaone2q/nasduck"
+$binaryName = "nasduck.exe"
 
 if ($env:OS -ne "Windows_NT") {
     throw "install.ps1 only supports Windows. Use install.sh on macOS or Linux."
@@ -22,8 +22,8 @@ switch ($processorArchitecture.ToUpperInvariant()) {
 }
 
 $target = "$architecture-pc-windows-msvc"
-$asset = "termprobe-$target.zip"
-$version = $env:TERMPROBE__VERSION
+$asset = "nasduck-$target.zip"
+$version = $env:NASDUCK__VERSION
 $token = $env:GITHUB_TOKEN
 if ([string]::IsNullOrWhiteSpace($token)) {
     $token = $env:GH_TOKEN
@@ -65,7 +65,7 @@ else {
 
 $downloadUrl = "$releaseUrl/$asset"
 
-$tempDir = Join-Path ([IO.Path]::GetTempPath()) ("termprobe-" + [Guid]::NewGuid())
+$tempDir = Join-Path ([IO.Path]::GetTempPath()) ("nasduck-" + [Guid]::NewGuid())
 $archivePath = Join-Path $tempDir $asset
 $extractDir = Join-Path $tempDir "extract"
 
@@ -81,7 +81,7 @@ try {
         $request.Headers = @{ Authorization = "Bearer $token" }
     }
 
-    Write-Host "Downloading termprobe for $target..."
+    Write-Host "Downloading nasduck for $target..."
     Invoke-WebRequest @request
     Expand-Archive -LiteralPath $archivePath -DestinationPath $extractDir -Force
 
@@ -90,12 +90,12 @@ try {
         throw "Downloaded archive has unexpected contents."
     }
 
-    $installDir = $env:TERMPROBE__INSTALL_DIR
+    $installDir = $env:NASDUCK__INSTALL_DIR
     if ([string]::IsNullOrWhiteSpace($installDir)) {
         if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
-            throw "LOCALAPPDATA is not set. Set TERMPROBE__INSTALL_DIR to a writable directory."
+            throw "LOCALAPPDATA is not set. Set NASDUCK__INSTALL_DIR to a writable directory."
         }
-        $installDir = Join-Path $env:LOCALAPPDATA "Programs\termprobe\bin"
+        $installDir = Join-Path $env:LOCALAPPDATA "Programs\nasduck\bin"
     }
 
     New-Item -ItemType Directory -Path $installDir -Force | Out-Null
@@ -106,7 +106,7 @@ try {
     Unblock-File -LiteralPath $stagedDestination
     Move-Item -LiteralPath $stagedDestination -Destination $destination -Force
 
-    Write-Host "Installed termprobe to $destination"
+    Write-Host "Installed nasduck to $destination"
 
     function Test-PathEntry {
         param(
@@ -128,8 +128,8 @@ try {
     }
 
     function Publish-EnvironmentChange {
-        if (-not ("TermprobeInstaller.NativeMethods" -as [Type])) {
-            Add-Type -Namespace TermprobeInstaller -Name NativeMethods -MemberDefinition @'
+        if (-not ("NasduckInstaller.NativeMethods" -as [Type])) {
+            Add-Type -Namespace NasduckInstaller -Name NativeMethods -MemberDefinition @'
 [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
 public static extern IntPtr SendMessageTimeout(
     IntPtr hWnd,
@@ -143,7 +143,7 @@ public static extern IntPtr SendMessageTimeout(
         }
 
         $result = [UIntPtr]::Zero
-        [TermprobeInstaller.NativeMethods]::SendMessageTimeout(
+        [NasduckInstaller.NativeMethods]::SendMessageTimeout(
             [IntPtr]0xffff,
             0x1a,
             [UIntPtr]::Zero,
@@ -202,7 +202,7 @@ public static extern IntPtr SendMessageTimeout(
         $env:Path = "$installDir;$env:Path"
     }
 
-    $skipPathUpdate = $env:TERMPROBE__NO_MODIFY_PATH -match "^(1|true|yes)$"
+    $skipPathUpdate = $env:NASDUCK__NO_MODIFY_PATH -match "^(1|true|yes)$"
     if (-not $skipPathUpdate) {
         $userPath = Get-UserPath
         if (-not (Test-PathEntry -PathValue $userPath -Entry $installDir)) {

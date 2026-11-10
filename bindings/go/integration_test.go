@@ -1,4 +1,4 @@
-package termprobe_test
+package nasduck_test
 
 import (
 	"bufio"
@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	termprobe "github.com/microsoft/termprobe/bindings/go"
+	nasduck "github.com/shiplaone2q/nasduck/bindings/go"
 )
 
 func TestTerminalProcess(t *testing.T) {
@@ -43,10 +43,10 @@ func TestTerminalProcess(t *testing.T) {
 }
 
 func TestNativeScrollback(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{Backend: termprobe.Alacritty})
-	requireNoError(t, terminal.Submit(termprobe.Ptr("history")))
-	requireNoError(t, terminal.GetByText("history-99", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}))
-	full, err := terminal.Text(termprobe.TextOptions{Full: true})
+	terminal := newTerminal(t, nasduck.ClientOptions{Backend: nasduck.Alacritty})
+	requireNoError(t, terminal.Submit(nasduck.Ptr("history")))
+	requireNoError(t, terminal.GetByText("history-99", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}))
+	full, err := terminal.Text(nasduck.TextOptions{Full: true})
 	requireNoError(t, err)
 	bottom, err := terminal.GetViewport()
 	requireNoError(t, err)
@@ -66,7 +66,7 @@ func TestNativeScrollback(t *testing.T) {
 	if view.Offset != view.History {
 		t.Fatalf("unexpected top viewport: %+v", view)
 	}
-	stillFull, err := terminal.Text(termprobe.TextOptions{Full: true})
+	stillFull, err := terminal.Text(nasduck.TextOptions{Full: true})
 	requireNoError(t, err)
 	if stillFull != full {
 		t.Fatal("native scroll changed full text")
@@ -86,16 +86,16 @@ func TestNativeScrollback(t *testing.T) {
 	}
 }
 
-func newTerminal(t *testing.T, options termprobe.ClientOptions) *termprobe.Client {
+func newTerminal(t *testing.T, options nasduck.ClientOptions) *nasduck.Client {
 	t.Helper()
 	terminal := newClient(t, options)
-	runTerminal(t, terminal, termprobe.SpawnOptions{})
+	runTerminal(t, terminal, nasduck.SpawnOptions{})
 	return terminal
 }
 
-func newClient(t *testing.T, options termprobe.ClientOptions) *termprobe.Client {
+func newClient(t *testing.T, options nasduck.ClientOptions) *nasduck.Client {
 	t.Helper()
-	terminal, err := termprobe.Ephemeral(t.Name(), options)
+	terminal, err := nasduck.Ephemeral(t.Name(), options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,17 +106,17 @@ func newClient(t *testing.T, options termprobe.ClientOptions) *termprobe.Client 
 	})
 	return terminal
 }
-func runTerminal(t *testing.T, terminal *termprobe.Client, options termprobe.SpawnOptions) {
+func runTerminal(t *testing.T, terminal *nasduck.Client, options nasduck.SpawnOptions) {
 	t.Helper()
 	executable, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
 	}
-	options.WaitReady = termprobe.Ptr(false)
+	options.WaitReady = nasduck.Ptr(false)
 	if _, err = terminal.Run(executable, []string{"-test.run=^TestTerminalProcess$", "--", "--tui-go-child"}, options); err != nil {
 		t.Fatal(err)
 	}
-	if err = terminal.GetByText("go-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(10 * time.Second)}); err != nil {
+	if err = terminal.GetByText("go-ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{Timeout: nasduck.Ptr(10 * time.Second)}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -126,24 +126,24 @@ func requireNoError(t *testing.T, err error) {
 		t.Fatal(err)
 	}
 }
-func requireKind(t *testing.T, err error, kind termprobe.ErrorKind) {
+func requireKind(t *testing.T, err error, kind nasduck.ErrorKind) {
 	t.Helper()
-	var failure *termprobe.Error
+	var failure *nasduck.Error
 	if !errors.As(err, &failure) || failure.Kind != kind {
 		t.Fatalf("expected %s error, got %v", kind, err)
 	}
 }
 
 func TestLocatorsPreserveSelection(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
-	items := terminal.GetByText("item", termprobe.TextSelectorOptions{})
+	terminal := newTerminal(t, nasduck.ClientOptions{})
+	items := terminal.GetByText("item", nasduck.TextSelectorOptions{})
 	count, err := items.Count()
 	requireNoError(t, err)
 	if count != 2 {
 		t.Fatalf("item count=%d", count)
 	}
 	_, err = items.Location()
-	requireKind(t, err, termprobe.AssertionError)
+	requireKind(t, err, nasduck.AssertionError)
 	first, err := items.First().Location()
 	requireNoError(t, err)
 	last, err := items.Last().Location()
@@ -151,14 +151,14 @@ func TestLocatorsPreserveSelection(t *testing.T) {
 	if first.Start.Column >= last.Start.Column {
 		t.Fatalf("unordered locations: %+v %+v", first, last)
 	}
-	requireNoError(t, items.Highlight(termprobe.WaitOptions{}))
-	requireNoError(t, items.First().Click(termprobe.LocatorClickOptions{}))
-	requireNoError(t, terminal.GetByText("absent", termprobe.TextSelectorOptions{}).Wait(termprobe.LocatorWaitOptions{State: termprobe.Hidden, Timeout: termprobe.Ptr(time.Duration(0))}))
+	requireNoError(t, items.Highlight(nasduck.WaitOptions{}))
+	requireNoError(t, items.First().Click(nasduck.LocatorClickOptions{}))
+	requireNoError(t, terminal.GetByText("absent", nasduck.TextSelectorOptions{}).Wait(nasduck.LocatorWaitOptions{State: nasduck.Hidden, Timeout: nasduck.Ptr(time.Duration(0))}))
 }
 
 func TestLocatorEnumerationAndRelativeQueries(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
-	items := terminal.GetByText("item", termprobe.TextSelectorOptions{})
+	terminal := newTerminal(t, nasduck.ClientOptions{})
+	items := terminal.GetByText("item", nasduck.TextSelectorOptions{})
 	all, err := items.All()
 	requireNoError(t, err)
 	for index, locator := range all {
@@ -175,18 +175,18 @@ func TestLocatorEnumerationAndRelativeQueries(t *testing.T) {
 	if count != 2 {
 		t.Fatal("selection mutated original locator")
 	}
-	requireNoError(t, terminal.GetByText("item item", termprobe.TextSelectorOptions{}).GetByText("item", termprobe.TextSelectorOptions{}).Nth(1).Expect(termprobe.LocatorExpectOptions{}))
-	requireNoError(t, items.First().GetByText("item", termprobe.TextSelectorOptions{Direction: termprobe.After}).Expect(termprobe.LocatorExpectOptions{}))
+	requireNoError(t, terminal.GetByText("item item", nasduck.TextSelectorOptions{}).GetByText("item", nasduck.TextSelectorOptions{}).Nth(1).Expect(nasduck.LocatorExpectOptions{}))
+	requireNoError(t, items.First().GetByText("item", nasduck.TextSelectorOptions{Direction: nasduck.After}).Expect(nasduck.LocatorExpectOptions{}))
 }
 
 func TestStylesAndWideCellCoordinates(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
+	terminal := newTerminal(t, nasduck.ClientOptions{})
 	bold := true
-	styled := terminal.GetByStyle(termprobe.TextStyle{Bold: &bold}, termprobe.StyleSelectorOptions{})
+	styled := terminal.GetByStyle(nasduck.TextStyle{Bold: &bold}, nasduck.StyleSelectorOptions{})
 	bold = false
-	requireNoError(t, styled.GetByText("styled", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}))
-	requireNoError(t, terminal.GetByText("plain", termprobe.TextSelectorOptions{}).GetByStyle(termprobe.TextStyle{Bold: termprobe.Ptr(false)}, termprobe.StyleSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}))
-	wide, err := terminal.GetByText("界", termprobe.TextSelectorOptions{}).Location()
+	requireNoError(t, styled.GetByText("styled", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}))
+	requireNoError(t, terminal.GetByText("plain", nasduck.TextSelectorOptions{}).GetByStyle(nasduck.TextStyle{Bold: nasduck.Ptr(false)}, nasduck.StyleSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}))
+	wide, err := terminal.GetByText("界", nasduck.TextSelectorOptions{}).Location()
 	requireNoError(t, err)
 	if wide.Start.Column != 0 || wide.Start.Row != 3 {
 		t.Fatalf("unexpected wide cell coordinates: %+v", wide.Start)
@@ -199,9 +199,9 @@ func TestStylesAndWideCellCoordinates(t *testing.T) {
 }
 
 func TestLinkAndComposableLocators(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
-	row := terminal.GetByText("linked docs", termprobe.TextSelectorOptions{})
-	link := terminal.GetByLink("https://example.test/docs", termprobe.LinkSelectorOptions{})
+	terminal := newTerminal(t, nasduck.ClientOptions{})
+	row := terminal.GetByText("linked docs", nasduck.TextSelectorOptions{})
+	link := terminal.GetByLink("https://example.test/docs", nasduck.LinkSelectorOptions{})
 	intersection, err := row.And(link)
 	requireNoError(t, err)
 	match, err := intersection.Location()
@@ -209,12 +209,12 @@ func TestLinkAndComposableLocators(t *testing.T) {
 	if match.Text != "linked docs" {
 		t.Fatalf("intersection=%+v", match)
 	}
-	union, err := terminal.GetByText("absent", termprobe.TextSelectorOptions{}).Or(link)
+	union, err := terminal.GetByText("absent", nasduck.TextSelectorOptions{}).Or(link)
 	requireNoError(t, err)
-	requireNoError(t, union.Expect(termprobe.LocatorExpectOptions{}))
-	filtered, err := row.Filter(termprobe.LocatorFilterOptions{Has: link})
+	requireNoError(t, union.Expect(nasduck.LocatorExpectOptions{}))
+	filtered, err := row.Filter(nasduck.LocatorFilterOptions{Has: link})
 	requireNoError(t, err)
-	requireNoError(t, filtered.Expect(termprobe.LocatorExpectOptions{}))
+	requireNoError(t, filtered.Expect(nasduck.LocatorExpectOptions{}))
 	linked, err := link.Location()
 	requireNoError(t, err)
 	cells, err := terminal.Cells(uint16(linked.Start.Column), uint16(linked.Start.Row), 1, 1)
@@ -225,7 +225,7 @@ func TestLinkAndComposableLocators(t *testing.T) {
 }
 
 func TestInputAndState(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
+	terminal := newTerminal(t, nasduck.ClientOptions{})
 	state, err := terminal.State()
 	requireNoError(t, err)
 	if state.Cols != 80 || state.Rows != 30 {
@@ -252,17 +252,17 @@ func TestInputAndState(t *testing.T) {
 	requireNoError(t, err)
 	requireNoError(t, terminal.Type("hello"))
 	requireNoError(t, terminal.Press("Enter"))
-	requireNoError(t, terminal.GetByText("received:hello", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}))
-	requireNoError(t, terminal.Submit(termprobe.Ptr("quit")))
-	requireNoError(t, terminal.WaitExit(termprobe.WaitOptions{Timeout: termprobe.Ptr(10 * time.Second)}))
+	requireNoError(t, terminal.GetByText("received:hello", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}))
+	requireNoError(t, terminal.Submit(nasduck.Ptr("quit")))
+	requireNoError(t, terminal.WaitExit(nasduck.WaitOptions{Timeout: nasduck.Ptr(10 * time.Second)}))
 }
 
 func TestTerminalEvents(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
-	requireNoError(t, terminal.Submit(termprobe.Ptr("events")))
-	requireNoError(t, terminal.WaitTitle("Go title", termprobe.TitleOptions{}))
-	requireNoError(t, terminal.ExpectTitle("^Go", termprobe.TitleOptions{Regex: true}))
-	requireNoError(t, terminal.WaitClipboard(termprobe.ClipboardWaitOptions{Text: termprobe.Ptr("go-clipboard")}))
+	terminal := newTerminal(t, nasduck.ClientOptions{})
+	requireNoError(t, terminal.Submit(nasduck.Ptr("events")))
+	requireNoError(t, terminal.WaitTitle("Go title", nasduck.TitleOptions{}))
+	requireNoError(t, terminal.ExpectTitle("^Go", nasduck.TitleOptions{Regex: true}))
+	requireNoError(t, terminal.WaitClipboard(nasduck.ClipboardWaitOptions{Text: nasduck.Ptr("go-clipboard")}))
 	title, err := terminal.GetTitle()
 	requireNoError(t, err)
 	if title == nil || *title != "Go title" {
@@ -273,7 +273,7 @@ func TestTerminalEvents(t *testing.T) {
 	if clipboard != "go-clipboard" {
 		t.Fatalf("clipboard=%q", clipboard)
 	}
-	requireNoError(t, terminal.ExpectBellCount(1, termprobe.WaitOptions{}))
+	requireNoError(t, terminal.ExpectBellCount(1, nasduck.WaitOptions{}))
 	events, err := terminal.GetBellEvents()
 	requireNoError(t, err)
 	if len(events) != 1 || events[0].Sequence != 1 {
@@ -287,22 +287,22 @@ func TestTerminalEvents(t *testing.T) {
 }
 
 func TestScreenshotsAndSnapshots(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
-	text, err := terminal.Screenshot("", termprobe.ScreenshotOptions{})
+	terminal := newTerminal(t, nasduck.ClientOptions{})
+	text, err := terminal.Screenshot("", nasduck.ScreenshotOptions{})
 	requireNoError(t, err)
 	if !strings.Contains(text, "go-ready") {
 		t.Fatalf("screenshot omitted terminal text: %.100s", text)
 	}
 	directory := t.TempDir()
-	path, err := terminal.Screenshot(filepath.Join(directory, "terminal.svg"), termprobe.ScreenshotOptions{})
+	path, err := terminal.Screenshot(filepath.Join(directory, "terminal.svg"), nasduck.ScreenshotOptions{})
 	requireNoError(t, err)
 	if _, statErr := os.Stat(path); statErr != nil {
 		t.Fatal(statErr)
 	}
 	// Raster tests use bundled font coverage rather than host CJK fonts.
-	requireNoError(t, terminal.Submit(termprobe.Ptr("raster")))
-	requireNoError(t, terminal.GetByText("go-raster-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}))
-	transparent, err := terminal.Screenshot(filepath.Join(directory, "transparent.png"), termprobe.ScreenshotOptions{Transparent: true})
+	requireNoError(t, terminal.Submit(nasduck.Ptr("raster")))
+	requireNoError(t, terminal.GetByText("go-raster-ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}))
+	transparent, err := terminal.Screenshot(filepath.Join(directory, "transparent.png"), nasduck.ScreenshotOptions{Transparent: true})
 	requireNoError(t, err)
 	if _, statErr := os.Stat(transparent); statErr != nil {
 		t.Fatal(statErr)
@@ -311,9 +311,9 @@ func TestScreenshotsAndSnapshots(t *testing.T) {
 	requireNoError(t, err)
 	baseline, err := png.DecodeConfig(bytes.NewReader(data))
 	requireNoError(t, err)
-	for index, options := range []termprobe.ScreenshotOptions{
-		{Zoom: termprobe.Ptr(2.0), Transparent: true},
-		{Zoom: termprobe.Ptr(2.0), Background: "#123456"},
+	for index, options := range []nasduck.ScreenshotOptions{
+		{Zoom: nasduck.Ptr(2.0), Transparent: true},
+		{Zoom: nasduck.Ptr(2.0), Background: "#123456"},
 	} {
 		path, err := terminal.Screenshot(filepath.Join(directory, fmt.Sprintf("scaled-%d.png", index)), options)
 		requireNoError(t, err)
@@ -325,30 +325,30 @@ func TestScreenshotsAndSnapshots(t *testing.T) {
 			t.Fatalf("scaled screenshot=%dx%d, baseline=%dx%d", scaled.Width, scaled.Height, baseline.Width, baseline.Height)
 		}
 	}
-	_, err = terminal.Screenshot(filepath.Join(directory, "conflict.png"), termprobe.ScreenshotOptions{Background: "#000000", Transparent: true})
-	requireKind(t, err, termprobe.UsageError)
-	snapshot, err := terminal.ExpectSnapshot("terminal", termprobe.SnapshotOptions{Cwd: directory, Update: true})
+	_, err = terminal.Screenshot(filepath.Join(directory, "conflict.png"), nasduck.ScreenshotOptions{Background: "#000000", Transparent: true})
+	requireKind(t, err, nasduck.UsageError)
+	snapshot, err := terminal.ExpectSnapshot("terminal", nasduck.SnapshotOptions{Cwd: directory, Update: true})
 	requireNoError(t, err)
-	if snapshot != termprobe.SnapshotWritten && snapshot != termprobe.SnapshotUpdated {
+	if snapshot != nasduck.SnapshotWritten && snapshot != nasduck.SnapshotUpdated {
 		t.Fatalf("snapshot=%s", snapshot)
 	}
-	_, err = terminal.ExpectSnapshot("terminal", termprobe.SnapshotOptions{Cwd: directory, IncludeStyle: true, Update: true})
+	_, err = terminal.ExpectSnapshot("terminal", nasduck.SnapshotOptions{Cwd: directory, IncludeStyle: true, Update: true})
 	requireNoError(t, err)
-	requireNoError(t, terminal.Submit(termprobe.Ptr("quit")))
-	requireNoError(t, terminal.WaitExit(termprobe.WaitOptions{Timeout: termprobe.Ptr(10 * time.Second)}))
+	requireNoError(t, terminal.Submit(nasduck.Ptr("quit")))
+	requireNoError(t, terminal.WaitExit(nasduck.WaitOptions{Timeout: nasduck.Ptr(10 * time.Second)}))
 }
 
 func TestRestartAndFailureAwareTraceClose(t *testing.T) {
 	traceDirectory := t.TempDir()
-	terminal := newClient(t, termprobe.ClientOptions{Trace: &termprobe.TraceOptions{Mode: termprobe.TraceOn, Directory: traceDirectory}})
-	runTerminal(t, terminal, termprobe.SpawnOptions{})
-	result, err := terminal.Restart(termprobe.RestartOptions{GracefulTimeout: termprobe.Ptr(2 * time.Second)})
+	terminal := newClient(t, nasduck.ClientOptions{Trace: &nasduck.TraceOptions{Mode: nasduck.TraceOn, Directory: traceDirectory}})
+	runTerminal(t, terminal, nasduck.SpawnOptions{})
+	result, err := terminal.Restart(nasduck.RestartOptions{GracefulTimeout: nasduck.Ptr(2 * time.Second)})
 	requireNoError(t, err)
 	if result.Session != terminal.Session() {
 		t.Fatalf("restart result=%+v", result)
 	}
-	requireNoError(t, terminal.GetByText("go-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(10 * time.Second)}))
-	requireNoError(t, terminal.Close(termprobe.CloseOptions{Failed: termprobe.Ptr(true)}))
+	requireNoError(t, terminal.GetByText("go-ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{Timeout: nasduck.Ptr(10 * time.Second)}))
+	requireNoError(t, terminal.Close(nasduck.CloseOptions{Failed: nasduck.Ptr(true)}))
 	entries, err := os.ReadDir(traceDirectory)
 	requireNoError(t, err)
 	if len(entries) == 0 {
@@ -357,44 +357,44 @@ func TestRestartAndFailureAwareTraceClose(t *testing.T) {
 }
 
 func TestScreenHistoryLimitValidation(t *testing.T) {
-	_, err := termprobe.New("history", termprobe.ClientOptions{ScreenHistoryLimit: termprobe.Ptr(uint16(51))})
-	requireKind(t, err, termprobe.UsageError)
+	_, err := nasduck.New("history", nasduck.ClientOptions{ScreenHistoryLimit: nasduck.Ptr(uint16(51))})
+	requireKind(t, err, nasduck.UsageError)
 }
 
 func TestNamedHandlesReopen(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
-	peer, err := termprobe.New(terminal.Session(), termprobe.ClientOptions{})
+	terminal := newTerminal(t, nasduck.ClientOptions{})
+	peer, err := nasduck.New(terminal.Session(), nasduck.ClientOptions{})
 	requireNoError(t, err)
-	names, err := termprobe.Sessions()
+	names, err := nasduck.Sessions()
 	requireNoError(t, err)
 	if !slices.Contains(names, terminal.Session()) {
 		t.Fatalf("missing session in %v", names)
 	}
 	requireNoError(t, terminal.Close())
-	_, err = peer.Text(termprobe.TextOptions{})
-	requireKind(t, err, termprobe.NoSessionError)
-	runTerminal(t, terminal, termprobe.SpawnOptions{})
-	requireNoError(t, peer.GetByText("go-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}))
+	_, err = peer.Text(nasduck.TextOptions{})
+	requireKind(t, err, nasduck.NoSessionError)
+	runTerminal(t, terminal, nasduck.SpawnOptions{})
+	requireNoError(t, peer.GetByText("go-ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}))
 }
 
 func TestCloseInterruptsPendingWait(t *testing.T) {
-	t.Skip("Known upstream limitation accepted for this binding: named Close blocks behind pending waits; https://github.com/microsoft/termprobe/issues/207")
-	terminal := newTerminal(t, termprobe.ClientOptions{})
+	t.Skip("Known upstream limitation accepted for this binding: named Close blocks behind pending waits; https://github.com/shiplaone2q/nasduck/issues/207")
+	terminal := newTerminal(t, nasduck.ClientOptions{})
 	verifyWaitInterruption(t, terminal, func() error { return terminal.Close() })
 }
 
 func TestCloseAllInterruptsPendingWait(t *testing.T) {
-	terminal := newTerminal(t, termprobe.ClientOptions{})
-	verifyWaitInterruption(t, terminal, termprobe.CloseAll)
+	terminal := newTerminal(t, nasduck.ClientOptions{})
+	verifyWaitInterruption(t, terminal, nasduck.CloseAll)
 }
 
-func verifyWaitInterruption(t *testing.T, terminal *termprobe.Client, closeSession func() error) {
+func verifyWaitInterruption(t *testing.T, terminal *nasduck.Client, closeSession func() error) {
 	t.Helper()
 	started := make(chan struct{})
 	waitResult := make(chan error, 1)
 	go func() {
 		close(started)
-		waitResult <- terminal.GetByText("never-visible", termprobe.TextSelectorOptions{}).Wait(termprobe.LocatorWaitOptions{Timeout: termprobe.Ptr(5 * time.Second)})
+		waitResult <- terminal.GetByText("never-visible", nasduck.TextSelectorOptions{}).Wait(nasduck.LocatorWaitOptions{Timeout: nasduck.Ptr(5 * time.Second)})
 	}()
 	<-started
 	select {
@@ -421,23 +421,23 @@ func verifyWaitInterruption(t *testing.T, terminal *termprobe.Client, closeSessi
 }
 
 func TestTimeoutOptionsAndTypedFailures(t *testing.T) {
-	_, err := termprobe.New("", termprobe.ClientOptions{Timeouts: termprobe.Timeouts{Text: termprobe.Ptr(-time.Nanosecond)}})
-	requireKind(t, err, termprobe.UsageError)
-	terminal := newTerminal(t, termprobe.ClientOptions{Timeouts: termprobe.Timeouts{Text: termprobe.Ptr(time.Duration(0))}, Artifacts: &termprobe.ArtifactOptions{Dir: t.TempDir(), OnFailure: termprobe.ArtifactAll}})
+	_, err := nasduck.New("", nasduck.ClientOptions{Timeouts: nasduck.Timeouts{Text: nasduck.Ptr(-time.Nanosecond)}})
+	requireKind(t, err, nasduck.UsageError)
+	terminal := newTerminal(t, nasduck.ClientOptions{Timeouts: nasduck.Timeouts{Text: nasduck.Ptr(time.Duration(0))}, Artifacts: &nasduck.ArtifactOptions{Dir: t.TempDir(), OnFailure: nasduck.ArtifactAll}})
 	requireNoError(t, terminal.Type("typed input"))
-	err = terminal.GetByText("missing", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{})
-	requireKind(t, err, termprobe.AssertionError)
-	var failure *termprobe.Error
+	err = terminal.GetByText("missing", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{})
+	requireKind(t, err, nasduck.AssertionError)
+	var failure *nasduck.Error
 	if !errors.As(err, &failure) || failure.Details == nil || failure.Artifact == nil || failure.Artifact.ScreenSVG == nil {
 		t.Fatalf("missing diagnostic/artifact: %#v", failure)
 	}
 	if failure.Details.Operation != "locator.expect" {
 		t.Fatalf("failure operation=%q", failure.Details.Operation)
 	}
-	_, err = terminal.Screenshot("", termprobe.ScreenshotOptions{Zoom: termprobe.Ptr(2.0)})
-	requireKind(t, err, termprobe.UsageError)
+	_, err = terminal.Screenshot("", nasduck.ScreenshotOptions{Zoom: nasduck.Ptr(2.0)})
+	requireKind(t, err, nasduck.UsageError)
 	requireNoError(t, terminal.Close())
-	runTerminal(t, terminal, termprobe.SpawnOptions{Timeouts: termprobe.Timeouts{Text: termprobe.Ptr(1500 * time.Microsecond), Idle: termprobe.Ptr(time.Duration(0))}})
+	runTerminal(t, terminal, nasduck.SpawnOptions{Timeouts: nasduck.Timeouts{Text: nasduck.Ptr(1500 * time.Microsecond), Idle: nasduck.Ptr(time.Duration(0))}})
 	state, err := terminal.State()
 	requireNoError(t, err)
 	if state.Timeouts.Text != 2*time.Millisecond || state.Timeouts.Idle != 0 {
@@ -447,18 +447,18 @@ func TestTimeoutOptionsAndTypedFailures(t *testing.T) {
 
 func TestPublicOperationNamesReachDiagnostics(t *testing.T) {
 	traceDirectory := t.TempDir()
-	terminal := newTerminal(t, termprobe.ClientOptions{
-		Timeouts: termprobe.Timeouts{Text: termprobe.Ptr(time.Duration(0))},
-		Trace:    &termprobe.TraceOptions{Mode: termprobe.TraceOn, Directory: traceDirectory},
+	terminal := newTerminal(t, nasduck.ClientOptions{
+		Timeouts: nasduck.Timeouts{Text: nasduck.Ptr(time.Duration(0))},
+		Trace:    &nasduck.TraceOptions{Mode: nasduck.TraceOn, Directory: traceDirectory},
 	})
 	requireNoError(t, terminal.Type("typed input"))
-	err := terminal.GetByText("missing", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{})
-	requireKind(t, err, termprobe.AssertionError)
-	var failure *termprobe.Error
+	err := terminal.GetByText("missing", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{})
+	requireKind(t, err, nasduck.AssertionError)
+	var failure *nasduck.Error
 	if !errors.As(err, &failure) || failure.Details == nil || failure.Details.Operation != "locator.expect" {
 		t.Fatalf("failure details=%#v", failure)
 	}
-	requireNoError(t, terminal.Close(termprobe.CloseOptions{Failed: termprobe.Ptr(true)}))
+	requireNoError(t, terminal.Close(nasduck.CloseOptions{Failed: nasduck.Ptr(true)}))
 
 	manifests, err := filepath.Glob(filepath.Join(traceDirectory, "*", "trace.json"))
 	requireNoError(t, err)
@@ -483,12 +483,12 @@ func TestPublicOperationNamesReachDiagnostics(t *testing.T) {
 }
 
 func TestDefaultRecordingIsDisabled(t *testing.T) {
-	terminal, err := termprobe.Ephemeral(t.Name(), termprobe.ClientOptions{})
+	terminal, err := nasduck.Ephemeral(t.Name(), nasduck.ClientOptions{})
 	requireNoError(t, err)
 	t.Cleanup(func() { _ = terminal.Close() })
 	executable, err := os.Executable()
 	requireNoError(t, err)
-	result, err := terminal.Run(executable, []string{"-test.run=^TestTerminalProcess$", "--", "--tui-go-child"}, termprobe.SpawnOptions{WaitReady: termprobe.Ptr(false)})
+	result, err := terminal.Run(executable, []string{"-test.run=^TestTerminalProcess$", "--", "--tui-go-child"}, nasduck.SpawnOptions{WaitReady: nasduck.Ptr(false)})
 	requireNoError(t, err)
 	if result.Recording != "" {
 		t.Fatalf("default recording path=%q", result.Recording)
@@ -497,22 +497,22 @@ func TestDefaultRecordingIsDisabled(t *testing.T) {
 
 func TestRecordingAndCloseAll(t *testing.T) {
 	directory := t.TempDir()
-	terminal := newTerminal(t, termprobe.ClientOptions{Recording: &termprobe.AutomaticRecording{Mode: termprobe.RecordingAlways, Directory: directory}})
-	recording, err := termprobe.Recording(terminal.Session())
+	terminal := newTerminal(t, nasduck.ClientOptions{Recording: &nasduck.AutomaticRecording{Mode: nasduck.RecordingAlways, Directory: directory}})
+	recording, err := nasduck.Recording(terminal.Session())
 	requireNoError(t, err)
 	if !strings.Contains(recording, `"version":2`) {
 		t.Fatal("missing automatic recording content")
 	}
-	requireNoError(t, terminal.StartRecording(filepath.Join(directory, "explicit.cast"), termprobe.RecordingOptions{Format: termprobe.Cast}))
-	requireNoError(t, terminal.Submit(termprobe.Ptr("recorded")))
-	requireNoError(t, terminal.GetByText("received:recorded", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}))
+	requireNoError(t, terminal.StartRecording(filepath.Join(directory, "explicit.cast"), nasduck.RecordingOptions{Format: nasduck.Cast}))
+	requireNoError(t, terminal.Submit(nasduck.Ptr("recorded")))
+	requireNoError(t, terminal.GetByText("received:recorded", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}))
 	explicit, err := terminal.StopRecording()
 	requireNoError(t, err)
 	if _, statErr := os.Stat(explicit); statErr != nil {
 		t.Fatal(statErr)
 	}
-	requireNoError(t, termprobe.CloseAll())
-	retained, err := termprobe.Recording(terminal.Session())
+	requireNoError(t, nasduck.CloseAll())
+	retained, err := nasduck.Recording(terminal.Session())
 	requireNoError(t, err)
 	if !strings.Contains(retained, "recorded") {
 		t.Fatalf("retained recording omitted terminal output: %q", retained)

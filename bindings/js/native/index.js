@@ -11,7 +11,7 @@ export {
 } from "./models.js";
 
 function libraryPath() {
-  if (process.env.TERMPROBE__NATIVE_LIBRARY) return process.env.TERMPROBE__NATIVE_LIBRARY;
+  if (process.env.NASDUCK__NATIVE_LIBRARY) return process.env.NASDUCK__NATIVE_LIBRARY;
   const platform = process.platform;
   const arch = process.arch;
   const libc = platform === "linux"
@@ -20,9 +20,9 @@ function libraryPath() {
   const tag = [platform, arch, platform === "win32" ? "msvc" : libc].filter(Boolean).join("-");
   const extension = { darwin: "dylib", linux: "so", win32: "dll" }[platform];
   if (!extension) throw new Error(`unsupported native platform: ${platform}`);
-  const local = fileURLToPath(new URL(`termprobe.${tag}.${extension}`, import.meta.url));
+  const local = fileURLToPath(new URL(`nasduck.${tag}.${extension}`, import.meta.url));
   if (existsSync(local)) return local;
-  return createRequire(import.meta.url).resolve(`@microsoft/termprobe-${tag}`);
+  return createRequire(import.meta.url).resolve(`@shiplaone2q/nasduck-${tag}`);
 }
 
 const path = libraryPath();
@@ -39,7 +39,7 @@ if (process.platform === "win32") {
     library.symbol("tui_abi_version"),
     [null],
   )) {
-    throw new Error("Failed to retain the termprobe native library for process lifetime");
+    throw new Error("Failed to retain the nasduck native library for process lifetime");
   }
 } else {
   platformLibrary = koffi.load(null);
@@ -51,7 +51,7 @@ if (process.platform === "win32") {
   // Keep code mapped after the last environment exits, including detached tasks.
   const retained = open(path, RTLD_NOW | RTLD_NODELETE);
   if (retained === null) {
-    throw new Error(`Failed to retain the termprobe native library: ${lastError()}`);
+    throw new Error(`Failed to retain the nasduck native library: ${lastError()}`);
   }
   if (close(retained) !== 0) {
     throw new Error(`Failed to release the temporary native library handle: ${lastError()}`);
@@ -62,6 +62,6 @@ if (process.platform === "win32") {
 const functions = { ...bind(library), library, platformLibrary };
 const version = functions.tui_abi_version();
 if (version !== abiVersion) {
-  throw new Error(`termprobe native ABI mismatch: expected ${abiVersion}, got ${version}`);
+  throw new Error(`nasduck native ABI mismatch: expected ${abiVersion}, got ${version}`);
 }
 export const { NativeSession, sessions, recording, closeAll, closeAllSync } = createAdapter(functions);

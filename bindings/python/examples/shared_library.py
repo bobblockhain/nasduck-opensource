@@ -1,13 +1,13 @@
-"""Run with an installed wheel or TUI_TEST_NATIVE_LIBRARY."""
+"""Run with an installed wheel or NASDUCK_NATIVE_LIBRARY."""
 
 import asyncio
 import sys
 
-from tui_test import TuiTest
+from nasduck import Nasduck
 
 
 async def main():
-    async with TuiTest.ephemeral("shared-library") as terminal:
+    async with Nasduck.ephemeral("shared-library") as terminal:
         await terminal.run(
             sys.executable, "-u", "-c",
             "print('Shared typed ABI: Python'); input()",

@@ -2,7 +2,7 @@ import koffi from "koffi";
 import { layouts, types } from "./abi.js";
 import { enums, methods, models } from "./models.js";
 
-const PREFIX = "__termprobe_native_error__:";
+const PREFIX = "__nasduck_native_error__:";
 const aliases = { TextStyle: "LocatorStyle", LocatorQuery: "LocatorExpression", LocatorDirection: "LocatorStageDirection" };
 const snake = (name) => name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 const optional = (type) => type.startsWith("Option<") ? type.slice(7, -1) : undefined;

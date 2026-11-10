@@ -1,5 +1,5 @@
 {
-  "name": "termprobe-maintenance-scripts",
+  "name": "nasduck-maintenance-scripts",
   "private": true,
   "type": "module",
   "scripts": {

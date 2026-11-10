@@ -122,7 +122,7 @@ pub fn generate(
         }
     }
     let tasks = syn::parse_file(&fs::read_to_string(
-        root.join("crates/termprobe-ffi/src/tasks.rs"),
+        root.join("crates/nasduck-ffi/src/tasks.rs"),
     )?)?;
     for item in tasks.items {
         if let Item::Fn(function) = item {
@@ -153,7 +153,7 @@ pub fn generate(
     emit(root, "bindings/js/native/abi.js", &js, check)?;
     emit(
         root,
-        "crates/termprobe-ffi/src/tasks_generated.rs",
+        "crates/nasduck-ffi/src/tasks_generated.rs",
         &format_source("rustfmt", &["--edition", "2021"], &wrappers)?,
         check,
     )?;

@@ -1,5 +1,5 @@
 {
-  "name": "termprobe-trace-viewer",
+  "name": "nasduck-trace-viewer",
   "private": true,
   "type": "module",
   "scripts": {

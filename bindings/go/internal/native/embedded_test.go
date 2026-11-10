@@ -60,7 +60,7 @@ func TestBundleTarget(t *testing.T) {
 }
 
 func TestOverrideBypassesBundleAndCache(t *testing.T) {
-	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "/explicit/library")
+	t.Setenv("NASDUCK__NATIVE_LIBRARY", "/explicit/library")
 	path, err := nativeLibraryPath(nil)
 	if err != nil || path != "/explicit/library" {
 		t.Fatalf("path = %q, error = %v", path, err)
@@ -68,7 +68,7 @@ func TestOverrideBypassesBundleAndCache(t *testing.T) {
 }
 
 func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
-	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "")
+	t.Setenv("NASDUCK__NATIVE_LIBRARY", "")
 	cache := t.TempDir()
 	t.Setenv("HOME", cache)
 	t.Setenv("XDG_CACHE_HOME", cache)
@@ -147,7 +147,7 @@ func TestCacheLibraryRejectsInvalidArchive(t *testing.T) {
 			if _, err := cacheLibrary(cache, library); err == nil {
 				t.Fatal("expected an extraction error")
 			}
-			entries, err := os.ReadDir(filepath.Join(cache, "termprobe", "native", library.checksum))
+			entries, err := os.ReadDir(filepath.Join(cache, "nasduck", "native", library.checksum))
 			if err != nil || len(entries) != 0 {
 				t.Fatalf("failed extraction left files: %v, %v", entries, err)
 			}
@@ -171,7 +171,7 @@ func TestCacheLibraryConcurrentProcesses(t *testing.T) {
 	for range 8 {
 		group.Go(func() {
 			command := exec.Command(os.Args[0], "-test.run=^TestCacheLibraryChild$")
-			command.Env = append(os.Environ(), "TERMPROBE__EXTRACTION_TEST_CACHE="+cache)
+			command.Env = append(os.Environ(), "NASDUCK__EXTRACTION_TEST_CACHE="+cache)
 			if output, err := command.CombinedOutput(); err != nil {
 				t.Errorf("child failed: %v\n%s", err, output)
 			}
@@ -190,7 +190,7 @@ func TestCacheLibraryConcurrentProcesses(t *testing.T) {
 }
 
 func TestCacheLibraryChild(t *testing.T) {
-	cache := os.Getenv("TERMPROBE__EXTRACTION_TEST_CACHE")
+	cache := os.Getenv("NASDUCK__EXTRACTION_TEST_CACHE")
 	if cache == "" {
 		return
 	}

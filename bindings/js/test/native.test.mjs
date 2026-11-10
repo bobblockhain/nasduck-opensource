@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { test } from "node:test";
 
-import { Termprobe } from "../dist/index.js";
+import { Nasduck } from "../dist/index.js";
 import {
   ExpectationError,
   InternalError,
@@ -15,7 +15,7 @@ import {
 } from "../dist/index.js";
 import { NativeRuntime, mapNativeError } from "../dist/native.js";
 
-const ERROR_PREFIX = "__termprobe_native_error__:";
+const ERROR_PREFIX = "__nasduck_native_error__:";
 
 function runWithGc(script) {
   const args = typeof globalThis.Deno !== "undefined"
@@ -46,8 +46,8 @@ test("a worker-only native library survives worker and process teardown", {
   const worker = `
     (async () => {
       const { workerData } = await import("node:worker_threads");
-      const { Termprobe } = await import(workerData);
-      const terminal = Termprobe.ephemeral();
+      const { Nasduck } = await import(workerData);
+      const terminal = Nasduck.ephemeral();
       try {
         await terminal.run(process.execPath, ["-e", "console.log('ready')"]);
         await terminal.getSize();
@@ -155,8 +155,8 @@ test("Koffi adapter loads the explicit shared library and honors invalid overrid
     ? (process.report.getReport().header.glibcVersionRuntime ? "gnu" : "musl")
     : process.platform === "win32" ? "msvc" : undefined;
   const tag = [process.platform, process.arch, variant].filter(Boolean).join("-");
-  const binary = process.env.TERMPROBE__NATIVE_LIBRARY
-    || new URL(`termprobe.${tag}.${extension}`, native);
+  const binary = process.env.NASDUCK__NATIVE_LIBRARY
+    || new URL(`nasduck.${tag}.${extension}`, native);
   const library = join(directory, `chosen.${extension}`);
   copyFileSync(binary, library);
   const loader = join(directory, "index.js");
@@ -188,13 +188,13 @@ test("Koffi adapter loads the explicit shared library and honors invalid overrid
     encoding: "utf8",
     env: {
       ...process.env,
-      TERMPROBE__NATIVE_LIBRARY: library,
+      NASDUCK__NATIVE_LIBRARY: library,
     },
   });
   assert.equal(child.status, 0, child.stderr);
   const invalid = spawnSync(process.execPath, args, {
     encoding: "utf8",
-    env: { ...process.env, TERMPROBE__NATIVE_LIBRARY: join(directory, "does-not-exist") },
+    env: { ...process.env, NASDUCK__NATIVE_LIBRARY: join(directory, "does-not-exist") },
   });
   assert.notEqual(invalid.status, 0);
   assert.match(invalid.stderr, /Failed to load shared library/);
@@ -524,8 +524,8 @@ test("locator expressions reject invalid fields and references", async () => {
 });
 
 test("composition validates ownership and locator-only filters without reading", () => {
-  const term = new Termprobe(`compose-${process.pid}`);
-  const other = new Termprobe(term.session);
+  const term = new Nasduck(`compose-${process.pid}`);
+  const other = new Nasduck(term.session);
   const bold = term.getByStyle({ bold: true });
   const link = term.getByLink("test:link");
   assert.doesNotThrow(() => bold.and(link).or(term.getByText("fallback")).filter({ has: link }));
@@ -699,8 +699,8 @@ test("public facade omits generic request dispatchers", async () => {
     new URL("../dist/client.d.ts", import.meta.url),
     "utf8",
   );
-  assert.equal("send" in Termprobe.prototype, false);
-  assert.equal("get" in Termprobe.prototype, false);
+  assert.equal("send" in Nasduck.prototype, false);
+  assert.equal("get" in Nasduck.prototype, false);
   assert.doesNotMatch(declarations, /\bsend\(/);
   assert.doesNotMatch(declarations, /\bget\(/);
   assert.doesNotMatch(declarations, /payload|request dispatcher/);

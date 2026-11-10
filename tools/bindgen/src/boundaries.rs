@@ -35,7 +35,7 @@ impl Models {
             "terminal/cell",
         ] {
             models.parse(&fs::read_to_string(
-                root.join(format!("crates/termprobe/src/{module}.rs")),
+                root.join(format!("crates/nasduck/src/{module}.rs")),
             )?)?;
         }
         Ok(models)
@@ -192,7 +192,7 @@ fn output_models(models: &Models, c: &mut String, cc: &mut String) -> Result<()>
         }
         writeln!(
             cc,
-            "#[allow(unused_variables)] fn {}(s: &mut Storage, v: termprobe::api::{model}) -> {} {{",
+            "#[allow(unused_variables)] fn {}(s: &mut Storage, v: nasduck::api::{model}) -> {} {{",
             snake(model),
             c_name(model)
         )?;
@@ -453,7 +453,7 @@ fn session_input(models: &Models) -> Result<String> {
             };
             assignment(&mut out, &f.name, &expr)?;
         }
-        out.push_str("}; options.validate().map_err(TermprobeError::usage)?; Some(options) } };\n");
+        out.push_str("}; options.validate().map_err(NasduckError::usage)?; Some(options) } };\n");
     }
     out.push_str("let defaults = DiagnosticRetentionOptions::default();\nlet retention = DiagnosticRetentionOptions {\n");
     for f in models.fields("DiagnosticRetentionOptions")? {
@@ -463,12 +463,12 @@ fn session_input(models: &Models) -> Result<String> {
             f.name, f.name, f.name
         )?;
     }
-    out.push_str("}; retention.validate().map_err(TermprobeError::usage)?;\nOk((self.name, ExecutionContext { artifact, trace, retention, ..ExecutionContext::default() })) } }\n");
+    out.push_str("}; retention.validate().map_err(NasduckError::usage)?;\nOk((self.name, ExecutionContext { artifact, trace, retention, ..ExecutionContext::default() })) } }\n");
     Ok(out)
 }
 
 fn input_conversions(models: &Models, ci: &mut String) -> Result<()> {
-    ci.push_str("unsafe fn open_input(value: TuiOpenOptions, backend: termprobe::terminal::backend::Backend, shell: Option<Shell>, profile: Profile, mode: AutomaticRecordingMode) -> Result<OpenOptions> { Ok(OpenOptions {\n");
+    ci.push_str("unsafe fn open_input(value: TuiOpenOptions, backend: nasduck::terminal::backend::Backend, shell: Option<Shell>, profile: Profile, mode: AutomaticRecordingMode) -> Result<OpenOptions> { Ok(OpenOptions {\n");
     for f in models.fields("OpenOptions")? {
         let name = &f.name;
         let value = match name.as_str() {
@@ -518,7 +518,7 @@ pub fn generate(root: &Path, check: bool) -> Result<()> {
     let notice = format!("// {NOTICE}\n");
     let mut c = notice.clone();
     c.push_str(&fs::read_to_string(
-        root.join("crates/termprobe-ffi/src/type_helpers.rs"),
+        root.join("crates/nasduck-ffi/src/type_helpers.rs"),
     )?);
     let mut cc = notice.clone();
     let mut ci = notice;
@@ -533,7 +533,7 @@ pub fn generate(root: &Path, check: bool) -> Result<()> {
     ] {
         emit(
             root,
-            &format!("crates/termprobe-ffi/src/{path}"),
+            &format!("crates/nasduck-ffi/src/{path}"),
             &format_source("rustfmt", &["--edition", "2021"], &content)?,
             check,
         )?;
@@ -605,14 +605,14 @@ pub(crate) mod tests {
         let directory = directory();
         let target = directory.path();
         for path in [
-            "crates/termprobe/src/api.rs",
-            "crates/termprobe/src/locator_query.rs",
-            "crates/termprobe/src/diagnostics.rs",
-            "crates/termprobe/src/profile.rs",
-            "crates/termprobe/src/shell/mod.rs",
-            "crates/termprobe/src/terminal/backend.rs",
-            "crates/termprobe/src/terminal/cell.rs",
-            "crates/termprobe-ffi/src/type_helpers.rs",
+            "crates/nasduck/src/api.rs",
+            "crates/nasduck/src/locator_query.rs",
+            "crates/nasduck/src/diagnostics.rs",
+            "crates/nasduck/src/profile.rs",
+            "crates/nasduck/src/shell/mod.rs",
+            "crates/nasduck/src/terminal/backend.rs",
+            "crates/nasduck/src/terminal/cell.rs",
+            "crates/nasduck-ffi/src/type_helpers.rs",
         ] {
             fs::create_dir_all(target.join(path).parent().unwrap()).unwrap();
             fs::copy(root.join(path), target.join(path)).unwrap();
@@ -620,10 +620,10 @@ pub(crate) mod tests {
         generate(target, false).unwrap();
         generate(target, true).unwrap();
         for path in [
-            "crates/termprobe-ffi/src/types.rs",
-            "crates/termprobe-ffi/src/input_generated.rs",
-            "crates/termprobe-ffi/src/output_generated.rs",
-            "crates/termprobe-ffi/src/session_generated.rs",
+            "crates/nasduck-ffi/src/types.rs",
+            "crates/nasduck-ffi/src/input_generated.rs",
+            "crates/nasduck-ffi/src/output_generated.rs",
+            "crates/nasduck-ffi/src/session_generated.rs",
             "bindings/js/native/index.d.ts",
             "bindings/js/native/models.js",
         ] {

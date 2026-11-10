@@ -7,7 +7,7 @@ import { gzipSync } from "node:zlib";
 import { sveltePlugin } from "./svelte-plugin.mjs";
 
 const source = fileURLToPath(new URL(".", import.meta.url));
-const destination = fileURLToPath(new URL("../crates/termprobe/assets/trace-viewer/", import.meta.url));
+const destination = fileURLToPath(new URL("../crates/nasduck/assets/trace-viewer/", import.meta.url));
 const templatePath = path.join(source, "index.html");
 const previewPath = path.join(source, ".preview", "failure.html");
 const check = process.argv.includes("--check");

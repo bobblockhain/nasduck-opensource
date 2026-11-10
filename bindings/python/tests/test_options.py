@@ -5,23 +5,23 @@ import re
 import unittest
 from unittest import mock
 
-import tui_test
-from tui_test import (
+import nasduck
+from nasduck import (
     FailureArtifactRef,
     FailureArtifactStatus,
     FailureDetails,
     FailureReason,
     _config as cfg,
 )
-from tui_test import _ephemeral as ephemeral
-from tui_test import client
-from tui_test.errors import (
+from nasduck import _ephemeral as ephemeral
+from nasduck import client
+from nasduck.errors import (
     ExpectationError,
     InternalError,
     NoSessionError,
     UsageError,
 )
-from tui_test.types import AutomaticRecording, Colors, Profile, TextStyle, Timeouts
+from nasduck.types import AutomaticRecording, Colors, Profile, TextStyle, Timeouts
 
 
 def run(coro):
@@ -48,7 +48,7 @@ class _FakeNative:
         return invoke
 
 
-class _CapturingClient(client.TuiTest):
+class _CapturingClient(client.Nasduck):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fake = _FakeNative()
@@ -251,7 +251,7 @@ class RecordingResolutionTests(unittest.TestCase):
 class FailureDiagnosticsTests(unittest.TestCase):
     def test_native_envelope_is_decoded_and_preserves_cause(self):
         native_error = client.native.NativeAssertionError("native message")
-        native_error._tui_test_error_json = json.dumps(
+        native_error._nasduck_error_json = json.dumps(
             {
                 "kind": "assertion",
                 "message": "structured message",
@@ -308,7 +308,7 @@ class FailureDiagnosticsTests(unittest.TestCase):
             for optional in ({}, {"details": None, "artifact": None}):
                 with self.subTest(kind=kind, optional=optional):
                     native_error = native_type("native message")
-                    native_error._tui_test_error_json = json.dumps(
+                    native_error._nasduck_error_json = json.dumps(
                         {"kind": kind, "message": "current message", **optional}
                     )
 
@@ -365,7 +365,7 @@ class FailureDiagnosticsTests(unittest.TestCase):
             with self.subTest(raw=raw):
                 native_error = client.native.NativeAssertionError("native message")
                 if raw is not None:
-                    native_error._tui_test_error_json = raw
+                    native_error._nasduck_error_json = raw
 
                 async def fail():
                     raise native_error
@@ -376,8 +376,8 @@ class FailureDiagnosticsTests(unittest.TestCase):
                 self.assertIs(raised.exception.__cause__, native_error)
 
     def test_public_errors_expose_only_current_diagnostic_fields(self):
-        self.assertFalse(hasattr(tui_test, "TerminalArtifact"))
-        self.assertNotIn("TerminalArtifact", tui_test.__all__)
+        self.assertFalse(hasattr(nasduck, "TerminalArtifact"))
+        self.assertNotIn("TerminalArtifact", nasduck.__all__)
         error = ExpectationError("missing")
         self.assertFalse(hasattr(error, "terminal"))
         self.assertIsNone(error.details)
@@ -485,7 +485,7 @@ class TypedCallTests(unittest.TestCase):
             client.native, "NativeSession", ObsoleteNativeSession
         ):
             with self.assertRaises(TypeError):
-                client.TuiTest("s", screen_history_limit=17)
+                client.Nasduck("s", screen_history_limit=17)
 
     def test_constructor_type_error_is_not_retried(self):
         error = TypeError("current argument is invalid")
@@ -493,7 +493,7 @@ class TypedCallTests(unittest.TestCase):
             client.native, "NativeSession", side_effect=error
         ) as constructor:
             with self.assertRaises(TypeError) as raised:
-                client.TuiTest("s")
+                client.Nasduck("s")
         self.assertIs(raised.exception, error)
         constructor.assert_called_once_with("s", None, None, None, False, None, None)
 
@@ -593,8 +593,8 @@ class TypedCallTests(unittest.TestCase):
                 "get_size",
             ],
         )
-        self.assertFalse(hasattr(client.TuiTest, "send"))
-        self.assertFalse(hasattr(client.TuiTest, "get"))
+        self.assertFalse(hasattr(client.Nasduck, "send"))
+        self.assertFalse(hasattr(client.Nasduck, "get"))
 
     def test_recording_helpers_use_typed_methods(self):
         terminal = _CapturingClient("s")
@@ -714,7 +714,7 @@ class RetryTests(unittest.TestCase):
             with self.subTest(method=method):
                 terminal = _CapturingClient("s")
                 error = client.native.NativeUsageError("invalid cols")
-                error._tui_test_error_json = json.dumps({
+                error._nasduck_error_json = json.dumps({
                     "kind": "usage", "message": "invalid cols",
                 })
                 terminal.fake.error = error
@@ -1090,7 +1090,7 @@ class ArtifactCaptureTests(unittest.TestCase):
             with self.subTest(directory=directory), mock.patch.object(
                 client.native, "NativeSession", wraps=client.native.NativeSession
             ) as constructor:
-                terminal = client.TuiTest(
+                terminal = client.Nasduck(
                     "s", artifacts={"dir": directory, "on_failure": "text"}
                 )
                 self.assertEqual(
@@ -1105,7 +1105,7 @@ class ArtifactCaptureTests(unittest.TestCase):
         with mock.patch.object(
             client.native, "NativeSession", return_value=native_session
         ) as constructor:
-            client.TuiTest(
+            client.Nasduck(
                 "s",
                 artifacts={
                     "dir": os.path.join("relative", "artifacts"),
@@ -1122,7 +1122,7 @@ class ArtifactCaptureTests(unittest.TestCase):
 
     def test_none_artifact_mode_does_not_require_directory(self):
         with mock.patch.object(client.native, "NativeSession") as constructor:
-            client.TuiTest("s", artifacts={"on_failure": "none"})
+            client.Nasduck("s", artifacts={"on_failure": "none"})
         self.assertIsNone(constructor.call_args.args[2])
         self.assertEqual(constructor.call_args.args[3], "none")
 
@@ -1131,7 +1131,7 @@ class ArtifactCaptureTests(unittest.TestCase):
             with self.subTest(mode=mode), mock.patch.object(
                 client.native, "NativeSession"
             ) as constructor:
-                client.TuiTest(
+                client.Nasduck(
                     "s",
                     artifacts={"dir": "artifacts", "on_failure": mode},
                 )
@@ -1139,18 +1139,18 @@ class ArtifactCaptureTests(unittest.TestCase):
 
     def test_invalid_artifact_modes_are_rejected_and_default_is_all(self):
         with mock.patch.object(client.native, "NativeSession") as constructor:
-            client.TuiTest("s", artifacts={"dir": "artifacts"})
+            client.Nasduck("s", artifacts={"dir": "artifacts"})
         self.assertEqual(constructor.call_args.args[3], "all")
         for mode in ("bundle", "svg", "json"):
             with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, "all, html, text, or none"):
-                client.TuiTest("s", artifacts={"dir": "artifacts", "on_failure": mode})
+                client.Nasduck("s", artifacts={"dir": "artifacts", "on_failure": mode})
 
     def test_native_artifact_references_are_not_recaptured_or_read(self):
         terminal = _CapturingClient(
             "s", artifacts={"dir": "unused", "on_failure": "all"}
         )
         native_error = client.native.NativeAssertionError("native message")
-        native_error._tui_test_error_json = json.dumps({
+        native_error._nasduck_error_json = json.dumps({
             "kind": "assertion",
             "message": "structured",
             "details": {
@@ -1192,7 +1192,7 @@ class UniqueSessionTests(unittest.TestCase):
     def test_format_and_uniqueness(self):
         first = ephemeral.unique_session()
         second = ephemeral.unique_session()
-        self.assertTrue(first.startswith("tui-test-"))
+        self.assertTrue(first.startswith("nasduck-"))
         self.assertNotEqual(first, second)
 
     def test_sanitizes_and_caps_names(self):

@@ -21,8 +21,8 @@ case "$(uname -m)" in
     ;;
 esac
 
-mkdir -p "$HOME/.local/bin" "$HOME/.local/lib" "$HOME/.cache/termprobe-release"
-archive="$HOME/.cache/termprobe-release/zig-$arch-linux-$version.tar.xz"
+mkdir -p "$HOME/.local/bin" "$HOME/.local/lib" "$HOME/.cache/nasduck-release"
+archive="$HOME/.cache/nasduck-release/zig-$arch-linux-$version.tar.xz"
 curl --proto '=https' --tlsv1.2 -fsSLo "$archive" \
   "https://ziglang.org/download/$version/zig-$arch-linux-$version.tar.xz"
 echo "$sha256  $archive" | sha256sum -c -

@@ -17,14 +17,14 @@ try {
   const environment = { ...process.env, CGO_ENABLED: "0", GOWORK: "off", GOTOOLCHAIN: "local", GOROOT: goroot };
   // Windows environment names are case-insensitive, including Path/PATH.
   for (const name of Object.keys(environment)) {
-    if (["PATH", "TERMPROBE__NATIVE_LIBRARY", "GOFLAGS", "GOOS", "GOARCH"].includes(name.toUpperCase())) delete environment[name];
+    if (["PATH", "NASDUCK__NATIVE_LIBRARY", "GOFLAGS", "GOOS", "GOARCH"].includes(name.toUpperCase())) delete environment[name];
   }
   environment.PATH = "";
   for (const args of [
-    ["mod", "init", "example.com/termprobe-consumer"],
-    ["mod", "edit", `-replace=github.com/microsoft/termprobe/bindings/go=${packagePath}`],
-    ["get", "github.com/microsoft/termprobe/bindings/go@v0.0.0"],
-    ["build", "-buildvcs=false", "-o", path.join(directory, "smoke.exe"), "github.com/microsoft/termprobe/bindings/go/examples/smoke"],
+    ["mod", "init", "example.com/nasduck-consumer"],
+    ["mod", "edit", `-replace=github.com/shiplaone2q/nasduck/bindings/go=${packagePath}`],
+    ["get", "github.com/shiplaone2q/nasduck/bindings/go@v0.0.0"],
+    ["build", "-buildvcs=false", "-o", path.join(directory, "smoke.exe"), "github.com/shiplaone2q/nasduck/bindings/go/examples/smoke"],
   ]) {
     execFileSync(go, args, { cwd: directory, env: environment, stdio: "inherit" });
   }

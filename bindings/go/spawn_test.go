@@ -1,4 +1,4 @@
-package termprobe_test
+package nasduck_test
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	termprobe "github.com/microsoft/termprobe/bindings/go"
+	nasduck "github.com/shiplaone2q/nasduck/bindings/go"
 )
 
 func TestRetryTerminalProcess(t *testing.T) {
@@ -33,26 +33,26 @@ func TestRetryTerminalProcess(t *testing.T) {
 	os.Exit(0)
 }
 
-func clientLaunchTimeouts() termprobe.Timeouts {
-	return termprobe.Timeouts{
-		Text: termprobe.Ptr(11 * time.Millisecond), Idle: termprobe.Ptr(12 * time.Millisecond),
-		Command: termprobe.Ptr(13 * time.Millisecond), Exit: termprobe.Ptr(14 * time.Millisecond),
-		Ready: termprobe.Ptr(15 * time.Millisecond),
+func clientLaunchTimeouts() nasduck.Timeouts {
+	return nasduck.Timeouts{
+		Text: nasduck.Ptr(11 * time.Millisecond), Idle: nasduck.Ptr(12 * time.Millisecond),
+		Command: nasduck.Ptr(13 * time.Millisecond), Exit: nasduck.Ptr(14 * time.Millisecond),
+		Ready: nasduck.Ptr(15 * time.Millisecond),
 	}
 }
 
 type launchTimeoutCase struct {
 	name     string
-	options  termprobe.Timeouts
-	expected termprobe.EffectiveTimeouts
+	options  nasduck.Timeouts
+	expected nasduck.EffectiveTimeouts
 }
 
 func launchTimeoutCases() []launchTimeoutCase {
 	zero := time.Duration(0)
 	return []launchTimeoutCase{
-		{name: "inherit", expected: termprobe.EffectiveTimeouts{Text: 11 * time.Millisecond, Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 15 * time.Millisecond}},
-		{name: "partial override", options: termprobe.Timeouts{Text: &zero, Ready: termprobe.Ptr(42 * time.Millisecond)}, expected: termprobe.EffectiveTimeouts{Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 42 * time.Millisecond}},
-		{name: "explicit zero", options: termprobe.Timeouts{Text: &zero, Idle: &zero, Command: &zero, Exit: &zero, Ready: &zero}},
+		{name: "inherit", expected: nasduck.EffectiveTimeouts{Text: 11 * time.Millisecond, Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 15 * time.Millisecond}},
+		{name: "partial override", options: nasduck.Timeouts{Text: &zero, Ready: nasduck.Ptr(42 * time.Millisecond)}, expected: nasduck.EffectiveTimeouts{Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 42 * time.Millisecond}},
+		{name: "explicit zero", options: nasduck.Timeouts{Text: &zero, Idle: &zero, Command: &zero, Exit: &zero, Ready: &zero}},
 	}
 }
 
@@ -66,12 +66,12 @@ func TestClientTimeoutDefaultsReachLaunch(t *testing.T) {
 
 func verifyLaunchTimeouts(t *testing.T, launch string, testCase launchTimeoutCase) {
 	t.Helper()
-	terminal := newClient(t, termprobe.ClientOptions{Timeouts: clientLaunchTimeouts()})
-	options := termprobe.SpawnOptions{WaitReady: termprobe.Ptr(false), Timeouts: testCase.options}
+	terminal := newClient(t, nasduck.ClientOptions{Timeouts: clientLaunchTimeouts()})
+	options := nasduck.SpawnOptions{WaitReady: nasduck.Ptr(false), Timeouts: testCase.options}
 	if launch == "run" {
 		runTerminal(t, terminal, options)
 	} else {
-		_, err := terminal.Open(termprobe.OpenOptions{SpawnOptions: options})
+		_, err := terminal.Open(nasduck.OpenOptions{SpawnOptions: options})
 		requireNoError(t, err)
 	}
 	state, err := terminal.State()
@@ -84,32 +84,32 @@ func verifyLaunchTimeouts(t *testing.T, launch string, testCase launchTimeoutCas
 func TestInvalidLaunchRetryPreservesSharedSession(t *testing.T) {
 	for _, launch := range []string{"open", "run"} {
 		t.Run(launch, func(t *testing.T) {
-			terminal := newTerminal(t, termprobe.ClientOptions{})
-			peer, err := termprobe.New(terminal.Session(), termprobe.ClientOptions{})
+			terminal := newTerminal(t, nasduck.ClientOptions{})
+			peer, err := nasduck.New(terminal.Session(), nasduck.ClientOptions{})
 			requireNoError(t, err)
-			options := termprobe.SpawnOptions{Backend: termprobe.Backend("unknown"), Retries: 1, Restart: termprobe.Ptr(false)}
+			options := nasduck.SpawnOptions{Backend: nasduck.Backend("unknown"), Retries: 1, Restart: nasduck.Ptr(false)}
 			if launch == "run" {
 				_, err = peer.Run("ignored", nil, options)
 			} else {
-				_, err = peer.Open(termprobe.OpenOptions{SpawnOptions: options})
+				_, err = peer.Open(nasduck.OpenOptions{SpawnOptions: options})
 			}
-			requireKind(t, err, termprobe.UsageError)
-			requireNoError(t, terminal.GetByText("go-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(time.Duration(0))}))
-			requireNoError(t, terminal.Submit(termprobe.Ptr("session-survived")))
-			requireNoError(t, peer.GetByText("received:session-survived", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(time.Second)}))
+			requireKind(t, err, nasduck.UsageError)
+			requireNoError(t, terminal.GetByText("go-ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{Timeout: nasduck.Ptr(time.Duration(0))}))
+			requireNoError(t, terminal.Submit(nasduck.Ptr("session-survived")))
+			requireNoError(t, peer.GetByText("received:session-survived", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{Timeout: nasduck.Ptr(time.Second)}))
 		})
 	}
 }
 
 func TestLaunchRetriesReadinessFailure(t *testing.T) {
 	directory := t.TempDir()
-	terminal := newClient(t, termprobe.ClientOptions{})
+	terminal := newClient(t, nasduck.ClientOptions{})
 	executable, err := os.Executable()
 	requireNoError(t, err)
 	marker := filepath.Join(directory, "first-launch")
-	result, err := terminal.Run(executable, []string{"-test.run=^TestRetryTerminalProcess$", "--", "--tui-go-retry-child"}, termprobe.SpawnOptions{
-		Cwd: directory, WaitReady: termprobe.Ptr(true), Retries: 1,
-		Timeouts: termprobe.Timeouts{Ready: termprobe.Ptr(3 * time.Second)},
+	result, err := terminal.Run(executable, []string{"-test.run=^TestRetryTerminalProcess$", "--", "--tui-go-retry-child"}, nasduck.SpawnOptions{
+		Cwd: directory, WaitReady: nasduck.Ptr(true), Retries: 1,
+		Timeouts: nasduck.Timeouts{Ready: nasduck.Ptr(3 * time.Second)},
 	})
 	requireNoError(t, err)
 	if !result.Ready {
@@ -117,6 +117,6 @@ func TestLaunchRetriesReadinessFailure(t *testing.T) {
 	}
 	_, err = os.Stat(marker)
 	requireNoError(t, err)
-	requireNoError(t, terminal.Submit(termprobe.Ptr("retried")))
-	requireNoError(t, terminal.GetByText("received:retried", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(3 * time.Second)}))
+	requireNoError(t, terminal.Submit(nasduck.Ptr("retried")))
+	requireNoError(t, terminal.GetByText("received:retried", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{Timeout: nasduck.Ptr(3 * time.Second)}))
 }

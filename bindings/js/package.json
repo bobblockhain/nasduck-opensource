@@ -1,7 +1,7 @@
 {
-  "name": "@microsoft/termprobe",
+  "name": "@shiplaone2q/nasduck",
   "version": "0.1.1",
-  "description": "Node bindings for the termprobe terminal engine",
+  "description": "Node bindings for the nasduck terminal engine",
   "type": "module",
   "exports": {
     ".": {
@@ -51,13 +51,13 @@
     "automation",
     "testing",
     "tui",
-    "termprobe"
+    "nasduck"
   ],
   "license": "MIT",
-  "author": "Microsoft",
+  "author": "NASDUCK",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/termprobe"
+    "url": "https://github.com/shiplaone2q/nasduck"
   },
   "publishConfig": {
     "access": "public"

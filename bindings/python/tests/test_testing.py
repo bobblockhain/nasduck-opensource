@@ -2,8 +2,8 @@ import asyncio
 import unittest
 from unittest import mock
 
-from tui_test import InternalError, TuiTest, UsageError, testing
-from tui_test.types import Colors, Profile, Timeouts
+from nasduck import InternalError, Nasduck, UsageError, testing
+from nasduck.types import Colors, Profile, Timeouts
 
 
 def run(coro):
@@ -95,7 +95,7 @@ class ContextManagerTests(unittest.TestCase):
                     failure=type(failure).__name__,
                     cleanup_error=type(cleanup_error).__name__,
                 ):
-                    term = TuiTest.ephemeral()
+                    term = Nasduck.ephemeral()
                     term.close = mock.AsyncMock(side_effect=cleanup_error)
                     testing.track_terminal(term)
 
@@ -163,7 +163,7 @@ class OptionPlumbingTests(unittest.TestCase):
     def test_per_call_options_win_over_defaults(self):
         created = []
 
-        class FakeTuiTest:
+        class FakeNasduck:
             def __init__(self, session, **kwargs):
                 self.session = session
                 self.kwargs = kwargs
@@ -183,7 +183,7 @@ class OptionPlumbingTests(unittest.TestCase):
             screen_history_limit=17,
             artifacts={"dir": "from-defaults"},
         )
-        with mock.patch.object(testing, "TuiTest", FakeTuiTest), \
+        with mock.patch.object(testing, "Nasduck", FakeNasduck), \
              mock.patch.object(testing, "track_terminal"):
             run(testing.create_terminal(cols=42))
         self.assertEqual(created[0].open_kwargs["cols"], 42)
@@ -200,7 +200,7 @@ class OptionPlumbingTests(unittest.TestCase):
                     term = mock.Mock()
                     term.open = mock.AsyncMock()
                     term.run = mock.AsyncMock()
-                    with mock.patch.object(testing, "TuiTest", return_value=term) as ctor, \
+                    with mock.patch.object(testing, "Nasduck", return_value=term) as ctor, \
                          mock.patch.object(testing, "track_terminal"):
                         run(testing.create_terminal(program=program, timeouts=timeouts))
                     expected = timeouts if timeouts is not None else defaults
@@ -226,7 +226,7 @@ class OptionPlumbingTests(unittest.TestCase):
                     term.open = mock.AsyncMock(side_effect=error)
                     term.run = mock.AsyncMock(side_effect=error)
                     term.close_quiet = mock.AsyncMock()
-                    with mock.patch.object(testing, "TuiTest", return_value=term):
+                    with mock.patch.object(testing, "Nasduck", return_value=term):
                         with self.assertRaises(type(error)) as raised:
                             run(testing.create_terminal(session="existing", program=program))
                     self.assertIs(raised.exception, error)

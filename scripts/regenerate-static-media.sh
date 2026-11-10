@@ -44,7 +44,7 @@ done
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/.." && pwd)
 static_dir="$repo_root/static"
-temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/termprobe-static-media.XXXXXX")
+temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/nasduck-static-media.XXXXXX")
 session_prefix="static-media-$$"
 sessions=()
 
@@ -61,7 +61,7 @@ close_session() {
     exit_code=$?
     set -e
     if ((exit_code != 0 && exit_code != 3)); then
-        echo "warning: could not close termprobe session '$session'" >&2
+        echo "warning: could not close nasduck session '$session'" >&2
     fi
 }
 
@@ -129,10 +129,10 @@ record_set() {
 
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*)
-        binary_name=termprobe.exe
+        binary_name=nasduck.exe
         ;;
     *)
-        binary_name=termprobe
+        binary_name=nasduck
         ;;
 esac
 
@@ -140,8 +140,8 @@ cd -- "$repo_root"
 
 if [[ -z "$cli_path" ]]; then
     if ((skip_build == 0)); then
-        echo "Building termprobe..."
-        cargo build -p termprobe-cli
+        echo "Building nasduck..."
+        cargo build -p nasduck-cli
     fi
 
     target_dir=${CARGO_TARGET_DIR:-"$repo_root/target"}
@@ -154,7 +154,7 @@ elif [[ "$cli_path" != /* ]]; then
 fi
 
 if [[ ! -f "$cli_path" ]]; then
-    echo "termprobe binary not found: $cli_path" >&2
+    echo "nasduck binary not found: $cli_path" >&2
     echo "Run without --skip-build or pass --cli PATH." >&2
     exit 1
 fi
@@ -168,13 +168,13 @@ set -euo pipefail
 
 escape=$'\033'
 bell=$'\a'
-printf '%s]2;termprobe - terminal automation%s' "$escape" "$bell"
-printf '%s[1;36mtermprobe>%s[0m open\r\n' "$escape" "$escape"
+printf '%s]2;nasduck - terminal automation%s' "$escape" "$bell"
+printf '%s[1;36mnasduck>%s[0m open\r\n' "$escape" "$escape"
 printf '%s[32m[ok]%s[0m session ready  %s[90mBash - 60x20%s[0m\r\n\r\n' \
     "$escape" "$escape" "$escape" "$escape"
-printf '%s[1;36mtermprobe>%s[0m record start demo.png\r\n' "$escape" "$escape"
+printf '%s[1;36mnasduck>%s[0m record start demo.png\r\n' "$escape" "$escape"
 printf '%s[33m[rec]%s[0m recording APNG at 2x density\r\n\r\n' "$escape" "$escape"
-printf '%s[1;36mtermprobe>%s[0m expect text ready\r\n' "$escape" "$escape"
+printf '%s[1;36mnasduck>%s[0m expect text ready\r\n' "$escape" "$escape"
 printf '%s[32m[ok] matched%s[0m ready\r\n' "$escape" "$escape"
 sleep 30
 EOF
@@ -186,13 +186,13 @@ cat >"$recording_script" <<'EOF'
 set -euo pipefail
 
 clear
-printf '\033]2;termprobe recording\a'
+printf '\033]2;nasduck recording\a'
 sleep 0.75
-printf '\033[36mtermprobe> \033[0m'
+printf '\033[36mnasduck> \033[0m'
 sleep 0.25
 printf '\033[33mdemo\033[0m\n'
 sleep 0.25
-printf '\033[36m  termprobe terminal\033[0m\n'
+printf '\033[36m  nasduck terminal\033[0m\n'
 sleep 0.25
 printf '  record APNG / GIF / MP4\n'
 sleep 0.25

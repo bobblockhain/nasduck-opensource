@@ -28,13 +28,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          was_headless="$(jq -r '."@xterm/headless"' crates/termprobe/assets/xtermjs/pinned.json)"
-          was_unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/termprobe/assets/xtermjs/pinned.json)"
+          was_headless="$(jq -r '."@xterm/headless"' crates/nasduck/assets/xtermjs/pinned.json)"
+          was_unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/nasduck/assets/xtermjs/pinned.json)"
 
           ./.github/scripts/vendor-xtermjs.sh --latest
 
-          headless="$(jq -r '."@xterm/headless"' crates/termprobe/assets/xtermjs/pinned.json)"
-          unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/termprobe/assets/xtermjs/pinned.json)"
+          headless="$(jq -r '."@xterm/headless"' crates/nasduck/assets/xtermjs/pinned.json)"
+          unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/nasduck/assets/xtermjs/pinned.json)"
 
           {
             echo "was_headless=$was_headless"
@@ -47,7 +47,7 @@ jobs:
           # README or LICENSE edit sitting in the tree is not a new release.
           # A package can also be republished at the same version, so the
           # bundles are what decide this rather than pinned.json alone.
-          assets=crates/termprobe/assets/xtermjs
+          assets=crates/nasduck/assets/xtermjs
           vendored=("$assets/pinned.json" "$assets/xterm-headless.js" "$assets/addon-unicode11.js")
           if git diff --quiet -- "${vendored[@]}"; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -72,7 +72,7 @@ jobs:
         if: steps.vendor.outputs.changed == 'true'
         id: conformance
         continue-on-error: true
-        run: cargo test -p termprobe-rs --features xtermjs
+        run: cargo test -p nasduck-rs --features xtermjs
 
       - name: Open a pull request
         if: steps.vendor.outputs.changed == 'true'
@@ -103,7 +103,7 @@ jobs:
 
           Two things conformance does not cover, worth checking before merging:
 
-          - **The emoji width table** in \`crates/termprobe/assets/xtermjs/README.md\`. Agreeing with alacritty on those cases is the reason the unicode11 addon is pinned where it is, and nothing asserts it.
+          - **The emoji width table** in \`crates/nasduck/assets/xtermjs/README.md\`. Agreeing with alacritty on those cases is the reason the unicode11 addon is pinned where it is, and nothing asserts it.
           - **Each package's \`LICENSE\`**, which are separate notices: \`@xterm/headless\` ships none and declares MIT in its manifest, the addon carries its own.
 
           Opened by \`.github/workflows/xtermjs-update.yml\`, which runs \`.github/scripts/vendor-xtermjs.sh --latest\`. Pull requests created with \`GITHUB_TOKEN\` do not start CI, so push an empty commit to run it.
@@ -112,7 +112,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          assets=crates/termprobe/assets/xtermjs
+          assets=crates/nasduck/assets/xtermjs
           git add "$assets/pinned.json" "$assets/xterm-headless.js" "$assets/addon-unicode11.js"
           git commit -s -m "$title" -m "$verdict"
           git push -f origin "$branch"

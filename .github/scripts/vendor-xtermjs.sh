@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Re-vendor the xterm.js bundles in crates/termprobe/assets/xtermjs.
+# Re-vendor the xterm.js bundles in crates/nasduck/assets/xtermjs.
 #
 #   vendor-xtermjs.sh            re-fetch the versions pinned.json already names
 #   vendor-xtermjs.sh --latest   bump pinned.json to the latest releases first
 #
-# The bundles are checked into the repository so that building termprobe needs
+# The bundles are checked into the repository so that building nasduck needs
 # neither Node nor a network. This script is how they are updated.
 set -euo pipefail
 
-assets="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/crates/termprobe/assets/xtermjs"
+assets="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/crates/nasduck/assets/xtermjs"
 pinned="$assets/pinned.json"
 
 if [ "${1:-}" = "--latest" ]; then
@@ -35,6 +35,6 @@ trap 'rm -rf "$work"' EXIT
 echo "Vendored @xterm/headless@$headless and @xterm/addon-unicode11@$unicode11."
 echo
 echo "Next:"
-echo "  cargo test -p termprobe-rs --features xtermjs"
+echo "  cargo test -p nasduck-rs --features xtermjs"
 echo "  re-measure the emoji width table in $assets/README.md"
 echo "  re-check each package's LICENSE, which carry separate notices"

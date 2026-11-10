@@ -707,7 +707,7 @@ class Mouse {
   }
 }
 
-export class Termprobe {
+export class Nasduck {
   readonly session: string;
   readonly keyboard: Keyboard;
   readonly mouse: Mouse;
@@ -733,8 +733,8 @@ export class Termprobe {
     this.mouse = new Mouse(this.#runtime);
   }
 
-  static ephemeral(prefix?: string, opts: ClientOptions = {}): Termprobe {
-    return new Termprobe(uniqueSession(prefix), opts);
+  static ephemeral(prefix?: string, opts: ClientOptions = {}): Nasduck {
+    return new Nasduck(uniqueSession(prefix), opts);
   }
 
   #timeout(cls: TimeoutClass, callTimeout?: number): number | undefined {

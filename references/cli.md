@@ -24,10 +24,10 @@ Use `--session NAME` to select a session. `open` and `run` reuse it unless `--re
 ## Locate text
 
 ```sh
-termprobe find text "Save"
-termprobe expect text "Save" --fg green
-termprobe click text "Save" --after-text "Settings"
-termprobe highlight text 'item \d+' --regex
+nasduck find text "Save"
+nasduck expect text "Save" --fg green
+nasduck click text "Save" --after-text "Settings"
+nasduck highlight text 'item \d+' --regex
 ```
 
 Common options:
@@ -96,7 +96,7 @@ Captures project that cursor into the viewport and hide it outside the view.
 Raster recordings capture viewport changes. Asciicast records only the PTY stream.
 
 See the runnable [JavaScript example](../bindings/js/examples/scrollback.mjs)
-or the [Rust example](../crates/termprobe/examples/scrollback.rs).
+or the [Rust example](../crates/nasduck/examples/scrollback.rs).
 
 ## Wait
 
@@ -162,15 +162,15 @@ The pause keeps the alternate screen visible for one second.
 
 ```sh
 session="live-recording-$$"
-termprobe --session "$session" run --backend xtermjs --cols 24 --rows 4 sh -c \
+nasduck --session "$session" run --backend xtermjs --cols 24 --rows 4 sh -c \
   'stty -echo; printf "\033[?25lPRIMARY\033[?47h\033[H\033[2JALTERNATE"; read -r reply; printf "\033[?1049l"; read -r reply'
-termprobe --session "$session" expect text ALTERNATE
-termprobe --session "$session" record start live-recording.apng
+nasduck --session "$session" expect text ALTERNATE
+nasduck --session "$session" record start live-recording.apng
 sleep 1
-termprobe --session "$session" key press Enter
-termprobe --session "$session" expect text PRIMARY
-termprobe --session "$session" record stop
-termprobe --session "$session" close
+nasduck --session "$session" key press Enter
+nasduck --session "$session" expect text PRIMARY
+nasduck --session "$session" record stop
+nasduck --session "$session" close
 ```
 
 ## Failure diagnostics
@@ -180,7 +180,7 @@ Configure `[trace]` before `open` or `run`. Use `mode = "on"` to retain every se
 To write artifacts for one assertion:
 
 ```sh
-termprobe --json \
+nasduck --json \
   --failure-artifacts ./artifacts/failures \
   --diagnostic-context test=settings-save \
   expect text "Save" --fg green --timeout 5000
@@ -413,12 +413,12 @@ absent. Naming a profile the file does not define is an error, except for
 Use `expect mode NAME [--off]` to check a mode.
 
 ```sh
-termprobe get cursor --json          # x, y, visible, shape, color
-termprobe expect cursor --hidden
-termprobe expect cursor --visible --shape bar
-termprobe expect cursor --x 4 --y 0
-termprobe expect mode alternate_screen
-termprobe expect mode bracketed_paste --off
+nasduck get cursor --json          # x, y, visible, shape, color
+nasduck expect cursor --hidden
+nasduck expect cursor --visible --shape bar
+nasduck expect cursor --x 4 --y 0
+nasduck expect mode alternate_screen
+nasduck expect mode bracketed_paste --off
 ```
 
 `expect cursor` checks only the properties you name. Cursor visibility and
@@ -432,10 +432,10 @@ and `palette` entries that differ from the profile. Unchanged defaults use
 the session profile.
 
 ```sh
-termprobe get colors --json                       # foreground, background, cursor, palette
-termprobe expect colors --background '#1d1f21'
-termprobe expect colors --foreground 7 --cursor '#ff0000'
-termprobe expect colors --palette '1=#00ff00' --palette '200=#123456'
+nasduck get colors --json                       # foreground, background, cursor, palette
+nasduck expect colors --background '#1d1f21'
+nasduck expect colors --foreground 7 --cursor '#ff0000'
+nasduck expect colors --palette '1=#00ff00' --palette '200=#123456'
 ```
 
 Colors accept hex RGB, `r,g,b`, or an ANSI index from the session's palette.

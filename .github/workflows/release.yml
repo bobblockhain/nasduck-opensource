@@ -58,7 +58,7 @@ jobs:
             bindings/js/package-lock.json
             bindings/js/src/version.ts
             bindings/python/pyproject.toml
-            bindings/python/src/termprobe/_config.py
+            bindings/python/src/nasduck/_config.py
           )
           diff -u \
             <(printf '%s\n' "${version_files[@]}" | sort) \
@@ -66,8 +66,8 @@ jobs:
               "${version_files[@]}" | sort)
           node .github/scripts/release/verify-go-version.mjs "$version"
 
-      - name: Verify termprobe-rs crate package
-        run: cargo publish --locked --package termprobe-rs --dry-run
+      - name: Verify nasduck-rs crate package
+        run: cargo publish --locked --package nasduck-rs --dry-run
 
   build-cli:
     needs: verify
@@ -116,30 +116,30 @@ jobs:
           tool: cargo-zigbuild
 
       - if: "!contains(matrix.target, 'musl')"
-        run: cargo build --release --locked -p termprobe-cli --target ${{ matrix.target }}
+        run: cargo build --release --locked -p nasduck-cli --target ${{ matrix.target }}
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
       - if: contains(matrix.target, 'musl')
-        run: cargo zigbuild --release --locked -p termprobe-cli --target ${{ matrix.target }}
+        run: cargo zigbuild --release --locked -p nasduck-cli --target ${{ matrix.target }}
 
       - if: runner.os != 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../termprobe-${{ matrix.target }}.tar.gz termprobe
+          tar czf ../../../nasduck-${{ matrix.target }}.tar.gz nasduck
           cd -
 
       - if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path "target/${{ matrix.target }}/release/termprobe.exe" -DestinationPath "termprobe-${{ matrix.target }}.zip"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/nasduck.exe" -DestinationPath "nasduck-${{ matrix.target }}.zip"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: termprobe-${{ matrix.target }}
+          name: nasduck-${{ matrix.target }}
           path: |
-            termprobe-*.tar.gz
-            termprobe-*.zip
+            nasduck-*.tar.gz
+            nasduck-*.zip
 
   build-native:
     needs: verify
@@ -216,16 +216,16 @@ jobs:
         if: runner.os == 'Linux'
         run: >-
           node .github/scripts/release/check-native-elf.mjs
-          --library target/${{ matrix.target }}/release/libtermprobe_ffi.so
+          --library target/${{ matrix.target }}/release/libnasduck_ffi.so
           --target ${{ matrix.target }}
 
       - name: Pack shared native engine
         shell: bash
         run: |
           case "${{ matrix.target }}" in
-            *windows*) library=termprobe_ffi.dll ;;
-            *apple*) library=libtermprobe_ffi.dylib ;;
-            *) library=libtermprobe_ffi.so ;;
+            *windows*) library=nasduck_ffi.dll ;;
+            *apple*) library=libnasduck_ffi.dylib ;;
+            *) library=libnasduck_ffi.so ;;
           esac
           node .github/scripts/release/package-native.mjs native \
             --library "target/${{ matrix.target }}/release/$library" \
@@ -291,13 +291,13 @@ jobs:
           cd package-test
           npm init -y >/dev/null
           npm install --ignore-scripts \
-            "$GITHUB_WORKSPACE/package-artifacts/npm/microsoft-termprobe-linux-x64-gnu-${version}.tgz"
+            "$GITHUB_WORKSPACE/package-artifacts/npm/nasduck-core-linux-x64-gnu-${version}.tgz"
           npm install --ignore-scripts \
-            "$GITHUB_WORKSPACE/package-artifacts/npm/microsoft-termprobe-${version}.tgz"
+            "$GITHUB_WORKSPACE/package-artifacts/npm/nasduck-core-${version}.tgz"
           cd "$GITHUB_WORKSPACE"
           PATH="/usr/bin:/bin" \
-          TERMPROBE__BIN="$GITHUB_WORKSPACE/package-test/missing-termprobe" \
-          TERMPROBE__TEST_PACKAGE_ROOT="$GITHUB_WORKSPACE/package-test" \
+          NASDUCK__BIN="$GITHUB_WORKSPACE/package-test/missing-nasduck" \
+          NASDUCK__TEST_PACKAGE_ROOT="$GITHUB_WORKSPACE/package-test" \
             "$node" --test bindings/js/test/package.integration.test.mjs
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -353,8 +353,8 @@ jobs:
         with:
           name: go-package
           path: |
-            target/termprobe-go-*.tar.gz
-            target/termprobe-go-*.tar.gz.sha256
+            target/nasduck-go-*.tar.gz
+            target/nasduck-go-*.tar.gz.sha256
           if-no-files-found: error
 
   build-python:
@@ -451,9 +451,9 @@ jobs:
           package-test-python-38/bin/python -m pip install \
             --disable-pip-version-check bindings/python/dist/*.whl
           ! PATH="$GITHUB_WORKSPACE/package-test-python-38/bin:/usr/bin:/bin" \
-            command -v termprobe
+            command -v nasduck
           PATH="$GITHUB_WORKSPACE/package-test-python-38/bin:/usr/bin:/bin" \
-          TERMPROBE__BIN="$GITHUB_WORKSPACE/package-test-python-38/missing-termprobe" \
+          NASDUCK__BIN="$GITHUB_WORKSPACE/package-test-python-38/missing-nasduck" \
             "$GITHUB_WORKSPACE/package-test-python-38/bin/python" \
             bindings/python/tests/test_integration.py \
             IntegrationTests.test_echo_roundtrip
@@ -506,19 +506,19 @@ jobs:
             npm_tag=beta
           fi
           packages=(
-            termprobe-darwin-arm64
-            termprobe-darwin-x64
-            termprobe-linux-arm64-gnu
-            termprobe-linux-arm64-musl
-            termprobe-linux-x64-gnu
-            termprobe-linux-x64-musl
-            termprobe-win32-x64-msvc
-            termprobe
+            nasduck-darwin-arm64
+            nasduck-darwin-x64
+            nasduck-linux-arm64-gnu
+            nasduck-linux-arm64-musl
+            nasduck-linux-x64-gnu
+            nasduck-linux-x64-musl
+            nasduck-win32-x64-msvc
+            nasduck
           )
 
           for package in "${packages[@]}"; do
-            name="@microsoft/$package"
-            tarball="$GITHUB_WORKSPACE/npm-packages/microsoft-${package}-${version}.tgz"
+            name="@nasduck/$package"
+            tarball="$GITHUB_WORKSPACE/npm-packages/nasduck-${package}-${version}.tgz"
             if [[ ! -f "$tarball" ]]; then
               echo "Missing npm package tarball: $tarball" >&2
               exit 1
@@ -538,7 +538,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/termprobe
+      url: https://pypi.org/p/nasduck
     permissions:
       contents: read
       id-token: write
@@ -554,7 +554,7 @@ jobs:
           name: python-sdist
           path: dist
 
-      - name: Publish termprobe to PyPI
+      - name: Publish nasduck to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           skip-existing: true
@@ -567,7 +567,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: crates-io
-      url: https://crates.io/crates/termprobe-rs
+      url: https://crates.io/crates/nasduck-rs
     permissions:
       contents: read
       id-token: write
@@ -585,8 +585,8 @@ jobs:
         id: auth
         uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
 
-      - name: Publish termprobe-rs to crates.io
-        run: cargo publish --locked --package termprobe-rs
+      - name: Publish nasduck-rs to crates.io
+        run: cargo publish --locked --package nasduck-rs
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
@@ -619,9 +619,9 @@ jobs:
         shell: bash
         run: |
           cd target
-          sha256sum --check "termprobe-go-${RELEASE_TAG}.tar.gz.sha256"
+          sha256sum --check "nasduck-go-${RELEASE_TAG}.tar.gz.sha256"
           mkdir go-package
-          tar -xzf "termprobe-go-${RELEASE_TAG}.tar.gz" -C go-package
+          tar -xzf "nasduck-go-${RELEASE_TAG}.tar.gz" -C go-package
 
       - name: Publish immutable Go module tag
         shell: bash
@@ -666,7 +666,7 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: artifacts
-          pattern: termprobe-*
+          pattern: nasduck-*
           merge-multiple: true
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -720,7 +720,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add Formula/termprobe.rb
+          git add Formula/nasduck.rb
           git commit -s -m "$title"
           git push origin "$branch"
           echo "[Create a Homebrew formula PR for $RELEASE_TAG]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...$branch?expand=1)" >> "$GITHUB_STEP_SUMMARY"

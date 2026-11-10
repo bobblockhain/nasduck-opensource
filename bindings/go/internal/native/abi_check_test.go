@@ -1,4 +1,4 @@
-//go:build termprobe_abi_check && cgo
+//go:build nasduck_abi_check && cgo
 
 package native
 

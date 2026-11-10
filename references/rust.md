@@ -1,15 +1,15 @@
 # Rust
 
-Use `termprobe-rs` from Rust code and tests.
+Use `nasduck-rs` from Rust code and tests.
 
 [Back to the skill](../SKILL.md)
 
 ```sh
-cargo add termprobe-rs@0.1.1
+cargo add nasduck-rs@0.1.1
 ```
 
 ```rust
-use termprobe::{OpenOptions, Session};
+use nasduck::{OpenOptions, Session};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let terminal = Session::new("example");
@@ -41,6 +41,6 @@ Add `recording-raster` for APNG, GIF, and MP4. Add `ghostty`, `rio`, or `xtermjs
 
 Raster output uses installed fonts. Add a `recording-font-jetbrains-mono*` feature to bundle one.
 
-Use `ExecutionContext` with `FailureArtifactOptions` to write failure artifacts. `TermprobeError` exposes the structured details and artifact reference.
+Use `ExecutionContext` with `FailureArtifactOptions` to write failure artifacts. `NasduckError` exposes the structured details and artifact reference.
 
-Full API: [docs.rs](https://docs.rs/termprobe-rs/latest/termprobe/)
+Full API: [docs.rs](https://docs.rs/nasduck-rs/latest/nasduck/)

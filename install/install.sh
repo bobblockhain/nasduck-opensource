@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-REPOSITORY="microsoft/termprobe"
-BINARY_NAME="termprobe"
+REPOSITORY="shiplaone2q/nasduck"
+BINARY_NAME="nasduck"
 
 fail() {
   echo "Error: $*" >&2
@@ -16,7 +16,7 @@ case "$(uname -s)" in
   Darwin) OS="apple-darwin" ;;
   Linux) OS="unknown-linux-musl" ;;
   MINGW*|MSYS*|CYGWIN*)
-    fail "Use install.ps1 to install termprobe on Windows."
+    fail "Use install.ps1 to install nasduck on Windows."
     ;;
   *) fail "Unsupported operating system: $(uname -s)" ;;
 esac
@@ -29,9 +29,9 @@ esac
 
 TARGET="${ARCH}-${OS}"
 ASSET="${BINARY_NAME}-${TARGET}.tar.gz"
-VERSION="${TERMPROBE__VERSION:-latest}"
+VERSION="${NASDUCK__VERSION:-latest}"
 TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
-TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t termprobe)"
+TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t nasduck)"
 ARCHIVE_PATH="${TMP_DIR}/${ASSET}"
 EXTRACT_DIR="${TMP_DIR}/extract"
 
@@ -100,7 +100,7 @@ fi
 
 DOWNLOAD_URL="${RELEASE_URL}/${ASSET}"
 
-echo "Downloading termprobe for ${TARGET}..."
+echo "Downloading nasduck for ${TARGET}..."
 download "$DOWNLOAD_URL" "$ARCHIVE_PATH" ||
   fail "Could not download ${DOWNLOAD_URL}"
 
@@ -114,8 +114,8 @@ esac
 mkdir -p "$EXTRACT_DIR"
 tar -xzf "$ARCHIVE_PATH" -C "$EXTRACT_DIR"
 
-if [ -n "${TERMPROBE__INSTALL_DIR:-}" ]; then
-  INSTALL_DIR="$TERMPROBE__INSTALL_DIR"
+if [ -n "${NASDUCK__INSTALL_DIR:-}" ]; then
+  INSTALL_DIR="$NASDUCK__INSTALL_DIR"
 elif [ -n "${PREFIX:-}" ]; then
   INSTALL_DIR="${PREFIX}/bin"
 elif [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
@@ -126,7 +126,7 @@ else
 fi
 
 mkdir -p "$INSTALL_DIR" ||
-  fail "Could not create ${INSTALL_DIR}. Set TERMPROBE__INSTALL_DIR to a writable directory."
+  fail "Could not create ${INSTALL_DIR}. Set NASDUCK__INSTALL_DIR to a writable directory."
 
 DESTINATION="${INSTALL_DIR}/${BINARY_NAME}"
 STAGED_DESTINATION="${INSTALL_DIR}/.${BINARY_NAME}.tmp.$$"
@@ -134,7 +134,7 @@ cp "${EXTRACT_DIR}/${BINARY_NAME}" "$STAGED_DESTINATION"
 chmod 755 "$STAGED_DESTINATION"
 mv -f "$STAGED_DESTINATION" "$DESTINATION"
 
-echo "Installed termprobe to ${DESTINATION}"
+echo "Installed nasduck to ${DESTINATION}"
 
 case ":${PATH:-}:" in
   *":${INSTALL_DIR}:"*) exit 0 ;;
@@ -157,7 +157,7 @@ case "$CURRENT_SHELL" in
     PATH_LINE="export PATH=\"${INSTALL_DIR}:\$PATH\""
     ;;
   fish)
-    RC_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/termprobe.fish"
+    RC_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/nasduck.fish"
     PATH_LINE="fish_add_path \"${INSTALL_DIR}\""
     ;;
   *)
@@ -166,7 +166,7 @@ case "$CURRENT_SHELL" in
     ;;
 esac
 
-case "${TERMPROBE__NO_MODIFY_PATH:-}" in
+case "${NASDUCK__NO_MODIFY_PATH:-}" in
   1|true|TRUE|yes|YES)
     echo "Add ${INSTALL_DIR} to PATH."
     exit 0

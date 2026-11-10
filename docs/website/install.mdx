@@ -1,6 +1,6 @@
 ---
-title: Install tui-test
-description: Install the tui-test CLI or use the terminal engine from Python, JavaScript, Rust, or Go.
+title: Install nasduck
+description: Install the nasduck CLI or use the terminal engine from Python, JavaScript, Rust, or Go.
 editUrl: false
 ---
 
@@ -13,12 +13,12 @@ The installer downloads the latest stable release for your operating system and 
 <Tabs>
   <TabItem label="macOS and Linux">
     ```sh
-    curl -fsSL https://tui-test.dev/install.sh | sh
+    curl -fsSL https://nasduck.dev/install.sh | sh
     ```
   </TabItem>
   <TabItem label="Windows">
     ```powershell
-    irm https://tui-test.dev/install.ps1 | iex
+    irm https://nasduck.dev/install.ps1 | iex
     ```
   </TabItem>
 </Tabs>
@@ -26,19 +26,19 @@ The installer downloads the latest stable release for your operating system and 
 ### Homebrew
 
 ```sh
-brew tap microsoft/tui-test https://github.com/microsoft/tui-test
-brew install tui-test
+brew tap shiplaone2q/nasduck https://github.com/shiplaone2q/nasduck
+brew install nasduck
 ```
 
-You can also download platform archives from [GitHub Releases](https://github.com/microsoft/tui-test/releases).
+You can also download platform archives from [GitHub Releases](https://github.com/shiplaone2q/nasduck/releases).
 
 ### Verify the installation
 
 ```sh
-tui-test --version
+nasduck --version
 ```
 
-If your shell cannot find `tui-test`, restart the terminal or check that the installation directory is on your `PATH`.
+If your shell cannot find `nasduck`, restart the terminal or check that the installation directory is on your `PATH`.
 
 ## Libraries
 
@@ -49,7 +49,7 @@ Library sessions run in your process and do not require the CLI.
     Requires Python 3.8 or newer.
 
     ```sh
-    pip install tui-test
+    pip install nasduck
     ```
 
   </TabItem>
@@ -57,7 +57,7 @@ Library sessions run in your process and do not require the CLI.
     Requires Node.js 20 or newer.
 
     ```sh
-    npm install @microsoft/tui-test
+    npm install @shiplaone2q/nasduck
     ```
 
   </TabItem>
@@ -65,16 +65,16 @@ Library sessions run in your process and do not require the CLI.
     Requires Rust 1.90 or newer.
 
     ```sh
-    cargo add tui-test-rs
+    cargo add nasduck-rs
     ```
 
-    [Rust API reference](https://docs.rs/tui-test-rs/latest/tui_test/)
+    [Rust API reference](https://docs.rs/nasduck-rs/latest/nasduck/)
   </TabItem>
   <TabItem label="Go">
     Requires Go 1.26 or newer. Published modules include the native engine.
 
     ```sh
-    go get github.com/microsoft/tui-test/bindings/go@latest
+    go get github.com/shiplaone2q/nasduck/bindings/go@latest
     ```
 
   </TabItem>

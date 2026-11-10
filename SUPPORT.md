@@ -1,13 +1,13 @@
 # Support
 
-## How to file issues and get help
+## Getting help
 
-This project uses GitHub Issues to track bugs and feature requests. Please search the existing
-issues before filing new issues to avoid duplicates. For new issues, file your bug or
-feature request as a new Issue.
+- Usage questions: open an issue with the `question` label.
 
-For help and questions about using this project, create a new Github Discussion.
+- Bug reports: include the version, platform, the exact command and the output of `nasduck state`.
 
-## Microsoft Support Policy
+- Security reports: see [SECURITY.md](SECURITY.md).
 
-Support for this project is limited to the resources listed above.
+## Supported platforms
+
+Windows, Linux and macOS on x86_64 and aarch64. Releases are built by CI for those targets; anything else is source-only.

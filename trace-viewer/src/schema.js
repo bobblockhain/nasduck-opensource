@@ -129,7 +129,7 @@ const report = shape({
       }),
     })),
     runtime: optional(shape({
-      session_name: optional(text), shell: optional(text), backend: text, target_os: text, target_arch: text, termprobe_version: text,
+      session_name: optional(text), shell: optional(text), backend: text, target_os: text, target_arch: text, nasduck_version: text,
       timeouts: optional(shape({ text: number, idle: number, command: number, exit: number, ready: number })),
     })),
     process: optional(shape({ pid: optional(integer), state: text, cancelled: bool, ready: bool, command_running: bool })),

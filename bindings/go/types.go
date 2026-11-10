@@ -1,5 +1,5 @@
-// Package termprobe drives terminal programs through the in-process termprobe engine.
-package termprobe
+// Package nasduck drives terminal programs through the in-process nasduck engine.
+package nasduck
 
 import "time"
 

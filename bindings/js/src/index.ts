@@ -1,4 +1,4 @@
-export { Termprobe } from "./client.js";
+export { Nasduck } from "./client.js";
 export type {
   ClipboardWaitOptions,
   LocatorClickOptions,
@@ -30,7 +30,7 @@ export {
   ExpectationError,
   InternalError,
   NoSessionError,
-  TermprobeError,
+  NasduckError,
   UsageError,
 } from "./errors.js";
 export type { ErrorKind } from "./errors.js";

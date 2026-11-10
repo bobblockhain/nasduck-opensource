@@ -43,7 +43,7 @@ test("defaultShell is platform-aware", () => {
 
 test("uniqueSession has the documented shape", () => {
   const name = uniqueSession();
-  assert.match(name, /^termprobe-\d+-[a-z0-9]+-\d+$/);
+  assert.match(name, /^nasduck-\d+-[a-z0-9]+-\d+$/);
 });
 
 test("uniqueSession sanitizes unsafe characters", () => {

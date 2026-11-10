@@ -1,9 +1,8 @@
-# Microsoft Open Source Code of Conduct
+# Code of Conduct
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+This project follows the Contributor Covenant, version 2.1.
 
-Resources:
+- [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
+- [FAQ](https://www.contributor-covenant.org/faq)
 
-- [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/)
-- [Microsoft Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
-- Contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with questions or concerns
+Report incidents to the maintainers through a GitHub issue tagged `conduct`.

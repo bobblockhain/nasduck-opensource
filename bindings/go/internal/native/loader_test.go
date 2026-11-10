@@ -6,7 +6,7 @@ import (
 )
 
 func TestNativeLibraryPathRequiresBundleOrOverride(t *testing.T) {
-	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "")
+	t.Setenv("NASDUCK__NATIVE_LIBRARY", "")
 
 	_, err := nativeLibraryPath(nil)
 	if err == nil || !strings.Contains(err.Error(), "no bundled native engine") {
@@ -15,7 +15,7 @@ func TestNativeLibraryPathRequiresBundleOrOverride(t *testing.T) {
 }
 
 func TestInitializeNativeEngineReportsConfiguredLibraryFailure(t *testing.T) {
-	t.Setenv("TERMPROBE__NATIVE_LIBRARY", t.TempDir())
+	t.Setenv("NASDUCK__NATIVE_LIBRARY", t.TempDir())
 
 	err := initializeNativeEngine()
 	if err == nil || !strings.Contains(err.Error(), "load native engine from") {

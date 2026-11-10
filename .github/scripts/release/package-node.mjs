@@ -24,7 +24,7 @@ for (const tag of targets) {
   const [platform, arch, abi] = tag.split("-");
   const extension = { darwin: "dylib", linux: "so", win32: "dll" }[platform];
   if (!extension) throw new Error(`Unsupported native platform: ${platform}`);
-  const filename = `termprobe.${tag}.${extension}`;
+  const filename = `nasduck.${tag}.${extension}`;
   const nativePackage = path.join(nativePackagesDirectory, tag);
   const manifestPath = path.join(nativePackage, "package.json");
   const manifest = {
@@ -50,7 +50,7 @@ for (const tag of targets) {
   fs.copyFileSync(artifact, path.join(nativePackage, filename));
   rootPackage.optionalDependencies[manifest.name] = rootPackage.version;
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  fs.writeFileSync(path.join(nativePackage, "README.md"), `# ${manifest.name}\n\nThis package contains the termprobe shared library for ${tag}.\n`);
+  fs.writeFileSync(path.join(nativePackage, "README.md"), `# ${manifest.name}\n\nThis package contains the nasduck shared library for ${tag}.\n`);
   runNpm([
     "pack",
     nativePackage,

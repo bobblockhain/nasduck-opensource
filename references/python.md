@@ -1,19 +1,19 @@
 # Python
 
-Use `termprobe` from Python code and tests.
+Use `nasduck` from Python code and tests.
 
 [Back to the skill](../SKILL.md)
 
 ## Start
 
 ```sh
-pip install termprobe
+pip install nasduck
 ```
 
 ```python
-from termprobe import Termprobe
+from nasduck import Nasduck
 
-async with Termprobe.ephemeral() as terminal:
+async with Nasduck.ephemeral() as terminal:
     await terminal.run("my-app")
     await terminal.get_by_text("Ready").expect()
     await terminal.get_by_text("Continue").click()
@@ -121,7 +121,7 @@ Mouse: `click`, `move`, `down`, `up`, `drag`, and `scroll`.
 ## Test helpers
 
 ```python
-from termprobe.testing import terminal
+from nasduck.testing import terminal
 
 async with terminal(program=("my-app",)) as app:
     await app.get_by_text("Ready").expect()
@@ -131,6 +131,6 @@ Helpers: `create_terminal`, `terminal`, `close_all_tracked`, `set_terminal_defau
 
 ## Errors
 
-`ExpectationError`, `UsageError`, `NoSessionError`, and `InternalError` extend `TermprobeError`.
+`ExpectationError`, `UsageError`, `NoSessionError`, and `InternalError` extend `NasduckError`.
 
-Full API: [bindings/python/README.md](https://github.com/microsoft/termprobe/blob/main/bindings/python/README.md)
+Full API: [bindings/python/README.md](https://github.com/shiplaone2q/nasduck/blob/main/bindings/python/README.md)

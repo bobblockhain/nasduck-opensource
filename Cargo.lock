@@ -1817,7 +1817,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "termprobe-bindgen"
+name = "nasduck-bindgen"
 version = "0.1.1"
 dependencies = [
  "anyhow",
@@ -1828,7 +1828,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "termprobe-cli"
+name = "nasduck-cli"
 version = "0.1.1"
 dependencies = [
  "anyhow",
@@ -1841,22 +1841,22 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "termprobe-rs",
+ "nasduck-rs",
  "vte",
  "windows-sys 0.61.2",
 ]
 
 [[package]]
-name = "termprobe-ffi"
+name = "nasduck-ffi"
 version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
- "termprobe-rs",
+ "nasduck-rs",
 ]
 
 [[package]]
-name = "termprobe-rs"
+name = "nasduck-rs"
 version = "0.1.1"
 dependencies = [
  "alacritty_terminal",

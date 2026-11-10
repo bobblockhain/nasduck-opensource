@@ -99,7 +99,7 @@ export function parseReport(source) {
   const runtime = details.runtime;
   const history = details.terminal?.screen_history;
   return {
-    title: `termprobe: ${runtime?.session_name || details.operation.name}`,
+    title: `nasduck: ${runtime?.session_name || details.operation.name}`,
     hasFailure, duration, frames, actions, geometry, mismatches,
     failureFrameIndex: frameIndex.get(timeline.failure_screen_sequence),
     failureActionId: failureAction?.id, failureScreen: timeline.failure_screen_sequence,
@@ -109,7 +109,7 @@ export function parseReport(source) {
         Name: runtime?.session_name, Emulator: runtime?.backend, Shell: runtime?.shell || "Direct program",
         "Terminal size": details.terminal && `${details.terminal.size.cols} x ${details.terminal.size.rows}`,
         Title: details.terminal?.title, "Process ID": details.process?.pid, "Process state": details.process?.state,
-        Platform: runtime && `${runtime.target_os} / ${runtime.target_arch}`, "termprobe version": runtime?.termprobe_version,
+        Platform: runtime && `${runtime.target_os} / ${runtime.target_arch}`, "nasduck version": runtime?.nasduck_version,
         "Assertion timeout": time(details.operation.timeout_ms), "Assertion elapsed": time(details.operation.elapsed_ms),
       },
       timeouts: runtime?.timeouts ? Object.fromEntries(Object.entries(runtime.timeouts).map(([name, ms]) => [name, time(ms)])) : { Defaults: "Not captured" },

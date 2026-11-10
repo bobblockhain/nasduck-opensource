@@ -16,7 +16,7 @@ export const IS_WINDOWS = process.platform === "win32";
 export const IS_MACOS = process.platform === "darwin";
 
 export function resolveSession(session?: string): string {
-  return session || process.env.TERMPROBE__SESSION || "default";
+  return session || process.env.NASDUCK__SESSION || "default";
 }
 
 export type TimeoutClass = "text" | "idle" | "command" | "exit" | "ready";

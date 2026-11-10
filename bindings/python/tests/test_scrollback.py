@@ -4,8 +4,8 @@ import sys
 import unittest
 from unittest.mock import Mock, patch
 
-from tui_test import NoSessionError, TuiTest, UsageError, Viewport, _native, unique_session
-from tui_test import _abi
+from nasduck import NoSessionError, Nasduck, UsageError, Viewport, _native, unique_session
+from nasduck import _abi
 
 
 class ScrollbackTests(unittest.TestCase):
@@ -27,7 +27,7 @@ class ScrollbackTests(unittest.TestCase):
 
     def test_signed_integer_validation(self):
         async def scenario():
-            terminal = TuiTest.ephemeral()
+            terminal = Nasduck.ephemeral()
             native = _native.NativeSession(unique_session("scroll-validation"))
             for amount in (1.5, float("nan"), float("inf"), 2147483648, -2147483649, "1", True):
                 with self.subTest(amount=amount):
@@ -42,7 +42,7 @@ class ScrollbackTests(unittest.TestCase):
 
     def test_history_view_preserves_full_text(self):
         async def scenario():
-            async with TuiTest.ephemeral(backend="alacritty") as terminal:
+            async with Nasduck.ephemeral(backend="alacritty") as terminal:
                 await terminal.run(sys.executable, "-u", "-c",
                     "import sys; [print('history-'+str(i)) for i in range(40)]; sys.stdin.read()",
                     rows=5, cols=40)

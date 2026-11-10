@@ -61,7 +61,7 @@ export function fixture() {
       },
       runtime: {
         session_name: "deployment-wizard", shell: "pwsh", backend: "alacritty", target_os: "test", target_arch: "test",
-        termprobe_version: "fixture",
+        nasduck_version: "fixture",
         timeouts: { text: 5000, idle: 5000, command: 30000, exit: 30000, ready: 30000 },
       },
       process: { pid: 123, state: "running", cancelled: false, ready: true, command_running: false },
@@ -99,7 +99,7 @@ export function fixture() {
 }
 
 export async function renderReport(data) {
-  const base = new URL("../../crates/termprobe/assets/trace-viewer/", import.meta.url);
+  const base = new URL("../../crates/nasduck/assets/trace-viewer/", import.meta.url);
   const [template, css, js] = await Promise.all(["report.html", "report.min.css", "report.min.js"].map((name) =>
     readFile(new URL(name, base), "utf8")));
   const json = JSON.stringify(data).replace(/[<>&\u2028\u2029]/g,
