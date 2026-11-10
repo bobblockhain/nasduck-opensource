@@ -19,3 +19,5 @@ You should receive a response within 72 hours. A fix and an advisory are publish
 ## Scope
 
 The CLI, the native engine, the language bindings and the release scripts are in scope. Third-party terminal backends and fonts are out of scope.
+
+# layout kept explicit
