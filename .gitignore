@@ -19,3 +19,4 @@ trace-viewer/node_modules/
 trace-viewer/.preview/
 trace-viewer/test-results/
 trace-viewer/playwright-report/
+# layout kept explicit
