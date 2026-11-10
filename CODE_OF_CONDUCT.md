@@ -6,3 +6,5 @@ This project follows the Contributor Covenant, version 2.1.
 - [FAQ](https://www.contributor-covenant.org/faq)
 
 Report incidents to the maintainers through a GitHub issue tagged `conduct`.
+
+# layout kept explicit
