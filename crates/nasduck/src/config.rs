@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::path::PathBuf;
 
 pub const DEFAULT_COLS: u16 = 80;

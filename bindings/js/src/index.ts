@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 export { Nasduck } from "./client.js";
 export type {
   ClipboardWaitOptions,

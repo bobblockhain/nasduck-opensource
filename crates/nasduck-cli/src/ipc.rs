@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! cli ↔ daemon transport over an `interprocess` local socket.
 //! One JSON request line per connection, one JSON response line back.
 

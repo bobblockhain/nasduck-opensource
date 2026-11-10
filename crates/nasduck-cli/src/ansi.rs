@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 pub const BORDER: &str = "\x1b[38;5;240m";
 pub const RESET: &str = "\x1b[0m";
 pub const HOME: &str = "\x1b[H";

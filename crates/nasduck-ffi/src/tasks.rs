@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Typed start functions copy borrowed inputs on the caller thread. Only owned
 //! operations reach worker threads, so waits cannot exhaust a foreign worker pool.
 use super::*;

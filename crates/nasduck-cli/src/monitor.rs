@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Live session monitor: a human watches what an agent is driving.
 //!
 //! The daemon renders the live emulator grid into a framed, full-color ANSI

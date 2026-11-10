@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! How a screenshot or recording is drawn.
 //!
 //! `[recording.style]` resolves through [`crate::profile::Settings`] into the

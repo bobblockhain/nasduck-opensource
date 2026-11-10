@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Text/regex search over the terminal grid, including scoped and normalized
 //! selectors. Match offsets are mapped back to terminal cells.
 

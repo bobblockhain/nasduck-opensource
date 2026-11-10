@@ -1,3 +1,4 @@
+# Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 from __future__ import annotations
 
 from ._config import VERSION as __version__

@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! [`Emulator`] backend built on `@xterm/headless` running in QuickJS.
 //!
 //! The bundle and its host shim are embedded in the binary and evaluated into

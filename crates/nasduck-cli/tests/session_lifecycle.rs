@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! End-to-end coverage for session lifecycle over the real cli + daemon.
 
 use std::io::{BufRead, Read, Write};

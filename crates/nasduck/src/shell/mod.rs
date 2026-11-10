@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::path::{Path, PathBuf};
 
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;

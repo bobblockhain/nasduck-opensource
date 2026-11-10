@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Command and output tracking from the PTY byte stream.
 
 use alacritty_terminal::vte::{Parser, Perform};

@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use crate::{finish_trace_and_close, Result};
 use nasduck::api::*;
 use nasduck::runtime::global_registry;

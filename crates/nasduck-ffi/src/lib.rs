@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Typed C boundary shared by all language adapters.
 //! C ABI input buffers must remain valid for the call. The adapter copies inputs
 //! before execution; C output storage belongs to Rust until tui_result_free.

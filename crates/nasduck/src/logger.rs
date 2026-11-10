@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Optional verbose logging of everything a terminal session reads and writes
 //! the PTY, plus lifecycle events. Modeled on inshellisense's data log: every
 //! record is timestamped and byte-escaped so control sequences are visible.

@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Backend-neutral grid vocabulary.
 //!
 //! Every consumer of the terminal grid (render, assert, monitor, locator)

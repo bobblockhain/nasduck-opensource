@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 import { Nasduck } from "../client.js";
 import { IS_MACOS, IS_WINDOWS } from "../config.js";
 import { uniqueSession } from "../ephemeral.js";

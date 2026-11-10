@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! [`Emulator`] backend built on `alacritty_terminal`. Translates the
 //! alacritty grid into nasduck's neutral cell vocabulary, plus a capture
 //! proxy that queues the terminal's replies so the reader can forward them

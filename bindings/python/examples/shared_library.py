@@ -1,3 +1,4 @@
+# Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 """Run with an installed wheel or NASDUCK_NATIVE_LIBRARY."""
 
 import asyncio

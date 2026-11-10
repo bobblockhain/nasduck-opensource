@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! State needed after painting a recording's initial viewport. A picture alone
 //! cannot reproduce the rendition, pending wrap or scrolling behavior of the
 //! next output. Keep a bounded shadow terminal rather than retaining PTY history.

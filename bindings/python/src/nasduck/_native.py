@@ -1,3 +1,4 @@
+# Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 """Private Python adapter for the shared, typed C ABI."""
 
 import asyncio

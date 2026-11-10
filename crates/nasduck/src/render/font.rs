@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;

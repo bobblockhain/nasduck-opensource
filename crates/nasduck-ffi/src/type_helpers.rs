@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::ffi::c_void;
 
 /// A borrowed UTF-8 byte string. NULL denotes absence; a non-NULL pointer

@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::collections::HashMap;
 use std::io::Write as IoWrite;
 use std::io::{self, Read};

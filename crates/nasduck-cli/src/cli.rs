@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use clap::{Args, Parser, Subcommand};
 
 use nasduck::config::{DEFAULT_COLS, DEFAULT_ROWS};

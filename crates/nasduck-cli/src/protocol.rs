@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 

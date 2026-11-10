@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Key-name and key-event to terminal input sequence mapping.
 
 use crate::api::KeyAction;

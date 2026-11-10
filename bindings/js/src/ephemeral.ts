@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 let sessionCounter = 0;
 
 export function uniqueSession(prefix?: string): string {

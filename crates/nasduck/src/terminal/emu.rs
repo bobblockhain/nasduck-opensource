@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! The terminal-emulator seam.
 //!
 //! nasduck drives a PTY and reads back a cell grid. [`Emulator`] is the

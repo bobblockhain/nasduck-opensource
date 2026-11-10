@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 // The smoke consumer runs itself in child mode, so it needs no external shell.
 package main
 

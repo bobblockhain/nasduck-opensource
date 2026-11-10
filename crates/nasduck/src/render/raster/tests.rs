@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 #[cfg(feature = "recording-font-jetbrains-mono-styles")]
 use super::font::{FontSystem, GlyphKey};
 use super::{FrameRenderer, GridRenderer, RgbaFrame};

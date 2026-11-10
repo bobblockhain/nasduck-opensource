@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! [`Emulator`] backend built on `rio-vt`.
 
 use std::sync::{Arc, Mutex, PoisonError};

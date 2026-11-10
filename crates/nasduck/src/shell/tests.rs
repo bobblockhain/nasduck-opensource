@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 use std::sync::mpsc::{self, Receiver};

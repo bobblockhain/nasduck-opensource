@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Run with `cargo run -p nasduck-rs --example scrollback --all-features`.
 
 use std::io::{self, BufRead, Write};

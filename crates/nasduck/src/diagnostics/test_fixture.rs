@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use super::*;
 use crate::profile::Profile;
 use crate::render::svg::RenderState;

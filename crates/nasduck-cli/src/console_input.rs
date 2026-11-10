@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::io::{self, Cursor, Read};
 
 use windows_sys::Win32::Foundation::HANDLE;

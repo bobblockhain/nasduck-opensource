@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Terminal profiles: the settings a session runs with.
 //!
 //! A profile is chosen when a session opens and fixed for its lifetime. It is

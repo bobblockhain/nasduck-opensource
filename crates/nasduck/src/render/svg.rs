@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Crisp, full-color SVG screenshot of a terminal grid, styled after
 //! `svg-term-cli`: a rounded window panel with macOS-style controls.
 //!

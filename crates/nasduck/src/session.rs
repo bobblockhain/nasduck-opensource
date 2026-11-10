@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! A single managed terminal session: a PTY feeding an emulator and command
 //! tracker, with a background reader thread.
 

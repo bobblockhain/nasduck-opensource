@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Backend-agnostic conformance suite for [`crate::terminal::emu::Emulator`].
 //!
 //! Every backend must produce the same grid for the same bytes, otherwise

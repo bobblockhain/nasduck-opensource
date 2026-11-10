@@ -1,0 +1,10 @@
+NASDUCK
+
+The engine, the CLI, the FFI surface and the language bindings are derived from
+tui-test, Copyright (c) Microsoft Corporation, MIT licensed.
+Upstream: https://github.com/microsoft/tui-test
+
+The product framing, the NASDUCK naming, the market overlay layer and the
+in-game integration notes are original to this repository.
+
+Licensed under the MIT license; see LICENSE.

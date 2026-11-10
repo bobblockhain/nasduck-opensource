@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 import { isMainThread } from "node:worker_threads";
 import { InternalError, UsageError, makeError } from "./errors.js";
 import type { ErrorKind, NasduckError } from "./errors.js";

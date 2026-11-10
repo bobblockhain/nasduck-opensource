@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 // Package nasducktest integrates terminal sessions with Go test cleanup.
 package nasducktest
 

@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Color parsing and comparison for `expect --fg/--bg`.
 
 use super::super::terminal::cell::Color;

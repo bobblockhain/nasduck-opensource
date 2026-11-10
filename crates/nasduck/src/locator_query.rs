@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Typed, non-recursive expression transport shared by the native bindings.
 
 use serde::{Deserialize, Serialize};

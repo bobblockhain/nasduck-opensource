@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! Machine-readable description of the full cli surface, generated from the
 //! clap command model so it can never drift from the real implementation.
 //! Printed by `nasduck agent-context`.

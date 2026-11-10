@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use vte::{Params, Parser, Perform};
 
 const MAX_PENDING: usize = 4096;

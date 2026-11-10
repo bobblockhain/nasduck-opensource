@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
 

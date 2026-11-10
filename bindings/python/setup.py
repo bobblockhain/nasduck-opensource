@@ -1,3 +1,4 @@
+# Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 """Build the ordinary shared library with setuptools-rust, without Python linkage."""
 
 import os

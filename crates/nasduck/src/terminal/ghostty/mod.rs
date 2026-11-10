@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! [`Emulator`] backend built on the `ghostty-vt` dependency.
 //!
 //! Ghostty handles are deliberately `!Send`, so the native terminal lives

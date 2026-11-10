@@ -1,3 +1,4 @@
+// Derived from tui-test (https://github.com/microsoft/tui-test), MIT, Microsoft Corporation.
 //! cli daemon host: local socket listener, idle watchdog, monitor streaming,
 //! and process state files around the reusable in-process engine.
 
