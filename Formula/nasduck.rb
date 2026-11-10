@@ -36,3 +36,5 @@ class Nasduck < Formula
     system bin/"nasduck", "--version"
   end
 end
+
+# layout kept explicit
