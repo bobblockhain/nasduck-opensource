@@ -472,3 +472,6 @@ model = "mlx-community/Llama-3.2-3B"
 ## Status
 
 Actively developed. See the [releases](https://github.com/bobblockhain/nasduck-opensource/releases) page for the current build.
+## Status
+
+Actively developed. See the [releases](https://github.com/bobblockhain/nasduck-opensource/releases) page for the current build.
