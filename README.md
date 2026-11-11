@@ -468,3 +468,7 @@ This project may contain trademarks or logos for projects, products, or services
 kind = "mlx"
 model = "mlx-community/Llama-3.2-3B"
 ```
+
+## Status
+
+Actively developed. See the [releases](https://github.com/bobblockhain/nasduck-opensource/releases) page for the current build.
