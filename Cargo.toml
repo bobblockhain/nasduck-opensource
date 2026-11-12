@@ -52,3 +52,5 @@ windows-sys = "0.61.2"
 [profile.release]
 strip = true
 lto = true
+
+# workspace-wide profile defaults live in the root manifest
