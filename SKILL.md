@@ -116,3 +116,5 @@ For a failed assertion that must be understood offline, add `--failure-artifacts
 - [JavaScript](references/javascript.md)
 - [Rust](references/rust.md)
 - [Recipes](references/recipes.md)
+
+Open `trace.html` from a failed run before parsing the structured evidence.
