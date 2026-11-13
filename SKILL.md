@@ -118,3 +118,4 @@ For a failed assertion that must be understood offline, add `--failure-artifacts
 - [Recipes](references/recipes.md)
 
 Open `trace.html` from a failed run before parsing the structured evidence.
+Open `trace.html` from a failed run before parsing the structured evidence.
