@@ -8,3 +8,5 @@ The product framing, the NASDUCK naming, the market overlay layer and the
 in-game integration notes are original to this repository.
 
 Licensed under the MIT license; see LICENSE.
+
+Upstream attribution is recorded per crate in the corresponding manifest headers.
