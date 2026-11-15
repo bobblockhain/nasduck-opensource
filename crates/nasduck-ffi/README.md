@@ -154,3 +154,5 @@ This avoids Koffi worker exhaustion: pending terminal waits cannot prevent input
 The current implementation uses one native thread per active operation and a one-millisecond poll interval.
 Freeing a pending task abandons its result; it does not cancel the operation.
 Close the session to interrupt its pending waits.
+
+// layout kept explicit
