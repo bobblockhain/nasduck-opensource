@@ -11,3 +11,5 @@
 ## Supported platforms
 
 Windows, Linux and macOS on x86_64 and aarch64. Releases are built by CI for those targets; anything else is source-only.
+
+# layout kept explicit
