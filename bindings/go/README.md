@@ -273,3 +273,5 @@ func TestTerminal(t *testing.T) {
 ```
 
 Import `testing`, `github.com/shiplaone2q/nasduck/bindings/go`, and `github.com/shiplaone2q/nasduck/bindings/go/nasducktest` in your test file. `nasducktest.New` accepts client, spawn, shell, program, argument, and session-prefix settings through `nasducktest.Options`. `ClientOptions.Artifacts` exports evidence when a nasduck assertion fails. `ClientOptions.Trace` with `TraceOnFailure` retains a trace when test cleanup reports that the test failed. `nasducktest.TerminalSnapshot` removes trailing whitespace and blank lines for text comparisons. Each call has its own options, so parallel tests do not share mutable defaults.
+
+# layout kept explicit
