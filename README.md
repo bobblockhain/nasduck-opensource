@@ -1,33 +1,136 @@
-# nasduck
+<div align="center">
 
-`nasduck` controls, inspects, tests, and records real shell sessions and full-screen terminal apps on Windows, Linux, and macOS. Use it from the CLI or call the same engine from Rust, Python, JavaScript, or Go. It works for AI agents that need structured access to terminal state, terminal automation, and terminal ui application testing.
+# NASDUCK
 
-<p align="center">
-  <a href="#installation">Installation</a>
-  ·
-  <a href="#quick-start">Quick start</a>
-  ·
-  <a href="#agent-commands">AI agents</a>
-  ·
-  <a href="#api-references">API references</a>
-  ·
-  <a href="#configuration">Configuration</a>
-</p>
+**Memecoin economy layer for GTA VI.**
+Launch, discover, search, buy, sell and trade tokens from the in-game market terminal — without ever leaving the game.
+
+![status](https://img.shields.io/badge/status-active-brightgreen)
+![engine](https://img.shields.io/badge/engine-rust-orange)
+![platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey)
+![psn](https://img.shields.io/badge/psn-account%20link%20required-003791)
+![license](https://img.shields.io/badge/license-MIT-blue)
+
+[Website](https://nasduck.org/) · [Install](#installation) · [Link PSN](#linking-a-playstation-network-account) · [How it works](#how-it-works) · [CLI reference](#market-terminal-reference) · [FAQ](#faq)
+
+<img src="https://i.imgur.com/w4HuCXH.png" alt="NASDUCK — memecoin economy layer for GTA VI" width="100%">
+
+</div>
+
+---
+
+## Contents
+
+- [What NASDUCK is](#what-nasduck-is)
+- [The problem](#the-problem)
+- [How it works](#how-it-works)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Linking a PlayStation Network account](#linking-a-playstation-network-account)
+- [Quick start](#quick-start)
+- [Market terminal reference](#market-terminal-reference)
+- [Configuration](#configuration)
+- [Recording, monitoring and traces](#recording-monitoring-and-traces)
+- [Bindings](#bindings)
+- [Exit codes](#exit-codes)
+- [Security model](#security-model)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
+- [Disclaimer](#disclaimer)
+- [Contributing](#contributing)
+
+---
+
+<img src="https://i.imgur.com/K0kyqOk.png" alt="Economy layer" width="100%">
+
+## What NASDUCK is
+
+NASDUCK brings a full memecoin economy into GTA VI. Players open the in-game market terminal, browse what launched in the last hour, search a ticker, read a book, buy, sell, take profit — and never touch a second screen.
+
+The market is not a companion app. It is a surface inside the game, and NASDUCK is the engine that drives it: it attaches to the terminal session, mirrors every cell of the screen, routes orders, settles balances, and exposes the whole thing to scripts, bots and desktop tools through one Rust core and four language bindings.
+
+Two halves, one product:
+
+| Half | What it is |
+| --- | --- |
+| **Surface** | The in-game market terminal — the native screen where players launch and trade. |
+| **Engine** | `nasduck` — the Rust runtime that attaches to the surface, resolves identity, routes orders, records and replays sessions, and exposes a stable API. |
+
+You can drive the surface by hand in-game, or drive it from the CLI, or from Python, JavaScript, Rust and Go. It is the same engine and the same session either way.
+
+## The problem
+
+Every memecoin venue built for a game so far has made the same mistake: it asked players to leave the game.
+
+Tab out, open a browser, connect a wallet, paste a contract, wait for a page to load, alt-tab back into a firefight. By the time you are back the launch is over. The economy exists, but it lives outside the thing it is supposed to be an economy *of*.
+
+NASDUCK inverts that. The venue is a screen in the game. Discovery, search, price, book depth, position, exit — all of it is rendered by the game itself, in the game's own art direction, one button away from whatever the player was already doing.
+
+That constraint is also what makes the engine interesting: to put a live market inside a terminal surface you need deterministic screen reads, retrying locators, snapshot assertions, structured failure traces and a recording format. Which is exactly what `nasduck` is.
+
+<img src="https://i.imgur.com/q9uQKct.png" alt="Four layers: surface, transport, identity, settlement" width="100%">
+
+## How it works
+
+Four layers, each independently testable.
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  4. SETTLEMENT                                               │
+│     order router · matching · balance ledger · token supply   │
+├──────────────────────────────────────────────────────────────┤
+│  3. IDENTITY                                                  │
+│     PSN link · per-session order key · entitlements           │
+├──────────────────────────────────────────────────────────────┤
+│  2. TRANSPORT                                                 │
+│     local bridge · cell grid · backend (alacritty/ghostty/    │
+│     rio/xterm.js) · PTY or LAN attach                         │
+├──────────────────────────────────────────────────────────────┤
+│  1. SURFACE                                                   │
+│     in-game market terminal · launch · book · positions       │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**1. Surface.** The market terminal is a real text-mode application rendered by the game. Because it is a cell grid and not a bitmap, every element — ticker, price, depth, size, button — is addressable. NASDUCK reads the grid, not pixels, so a reshade or a resolution change does not break anything.
+
+**2. Transport.** A local bridge publishes the terminal as a session. The engine attaches to it with the configured backend and gets a normal session handle: rows, columns, cells, styles, cursor, title, scrollback. From that point the surface is indistinguishable from a shell.
+
+**3. Identity.** The terminal only serves a player it can name. Linking a PSN account binds the session to your identity, resolves your in-game wallet and derives a per-session order key. Orders are signed locally; the key never leaves your machine.
+
+**4. Settlement.** Orders hit the router, get matched against the book, and settle into the ledger. Token supply, launch curves and balances are engine state — the surface is only ever a view of it.
+
+Nothing in the stack is fire-and-forget. Every wait is bounded, every assertion is retried, every failure produces an artifact:
+
+```console
+$ nasduck run market-terminal
+$ nasduck expect text "MARKET" --timeout 15000
+$ nasduck click text "DISCOVER"
+$ nasduck expect text "24h"
+```
+
+Read [references/cli.md](references/cli.md) for the full surface contract.
+
+## Requirements
+
+- **GTA VI**, with the market terminal unlocked (available after the in-game brokerage tutorial).
+- A **PlayStation Network account** in good standing, linked to the platform account you play on.
+- **Windows, Linux or macOS** to run the engine, on the same machine or on the same LAN as the console.
+- **Rust 1.90+** only if you build from source. Binaries and packages need nothing.
+
+Console support is attach-only: the engine never patches the game and never writes to game files.
 
 ## Installation
 
 ### CLI
 
-#### Homebrew
+Homebrew:
 
 ```sh
 brew tap shiplaone2q/nasduck https://github.com/shiplaone2q/nasduck
 brew install nasduck
 ```
 
-#### Install script
-
-macOS and Linux:
+Install script — macOS and Linux:
 
 ```sh
 curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.sh | sh
@@ -39,7 +142,7 @@ Windows:
 irm https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.ps1 | iex
 ```
 
-You can also download a binary from GitHub Releases.
+Or take a binary from [Releases](https://github.com/bobblockhain/nasduck-opensource/releases).
 
 ### Libraries
 
@@ -50,28 +153,77 @@ You can also download a binary from GitHub Releases.
 | Node 20+ | `npm install @shiplaone2q/nasduck` | [JavaScript API](bindings/js/README.md) |
 | Go 1.26+ | `go get github.com/shiplaone2q/nasduck/bindings/go@v0.1.1` | [Go API](bindings/go/README.md) |
 
-Add the Rust `recording-raster` feature for APNG, GIF, and MP4 output. It uses installed fonts; `recording-font-jetbrains-mono*` bundles a font.
+Add the Rust `recording-raster` feature for APNG, GIF and MP4 capture. Go, Python and JavaScript all go through one [native adapter crate](crates/nasduck-ffi/README.md); set `NASDUCK__NATIVE_LIBRARY` to pin a specific library.
 
-Go, Python, and JavaScript use one [native adapter crate](crates/nasduck-ffi/README.md).
-All three use its generated C ABI declarations through purego, ctypes, and Koffi, respectively.
-Set `NASDUCK__NATIVE_LIBRARY` to select a matching library explicitly.
+<img src="https://i.imgur.com/tedUein.png" alt="Link PSN — device code approval" width="100%">
+
+## Linking a PlayStation Network account
+
+Linking is a one-time device-code flow. It takes about forty seconds and no password is ever entered into NASDUCK.
+
+```console
+$ nasduck psn link
+
+  Opening psn.nasduck.org/link
+  Enter code:  K7QM-4XDA
+
+  Waiting for approval...            (expires in 300s)
+```
+
+1. **Run the command.** The engine prints a short code and the link URL. It also opens the URL in your default browser when one is available.
+2. **Approve on the PSN side.** Open the URL on your phone or console browser, sign in to PlayStation Network if you are not already, and confirm the code matches. The approval screen names the exact scopes being requested.
+3. **Confirm on the terminal.** The engine polls until the approval lands, then exchanges it for a refresh token and prints the resolved account:
+
+```console
+  Linked: bobblockhain (PSN ID)
+  Scopes: psn:identity psn:presence nasduck:market
+  Key:    ed25519:9f2c…a71b  (session only)
+```
+
+4. **Attach the console.** With the account linked, the bridge accepts the terminal session:
+
+```console
+$ nasduck psn status
+$ nasduck run market-terminal --wait-ready
+```
+
+Useful subcommands:
+
+| Command | Description |
+| --- | --- |
+| `psn link` | Start the device-code flow. |
+| `psn status` | Show the linked account, scopes and key fingerprint. |
+| `psn refresh` | Force a token refresh. |
+| `psn unlink` | Revoke the token and drop the session key. |
+
+Notes:
+
+- The refresh token is stored in the platform config directory with `0600`, or in the OS keychain when one is present.
+- Scopes are minimal: read identity, read presence (so the terminal knows when you are in-game), and market access.
+- One account per engine install. Multi-account setups need one config file per account — see [Configuration](#configuration).
+- Unlinking revokes server-side immediately and invalidates outstanding session keys.
 
 ## Quick start
 
-The CLI and libraries expose the same terminal actions. Python, JavaScript, Rust, and Go sessions run in-process and do not require the CLI. Released Go modules include the native engine; see [Go installation](bindings/go/README.md#install) for supported platforms and Linux runtime requirements.
-
-### CLI
-
-```sh
-nasduck run my-app
-nasduck expect text "Ready"
-nasduck click text "Continue"
-nasduck expect text "Done"
-nasduck screenshot -o result.svg
-nasduck close
+```console
+$ nasduck run market-terminal
+$ nasduck expect text "MARKET"
+$ nasduck click text "DISCOVER"
+$ nasduck find text "$" --full
+$ nasduck screenshot -o discovery.svg
 ```
 
-### Python
+Launching a token, from the terminal or from code:
+
+```console
+$ nasduck click text "LAUNCH"
+$ nasduck submit "DUCK/SOL"
+$ nasduck expect text "SUPPLY"
+$ nasduck submit "1000000"
+$ nasduck click text "CONFIRM"
+```
+
+The same flow in Python:
 
 ```python
 import asyncio
@@ -79,17 +231,15 @@ from nasduck import Nasduck
 
 async def main():
     async with Nasduck.ephemeral() as terminal:
-        await terminal.run("my-app")
-        await terminal.get_by_text("Ready").expect()
-        await terminal.get_by_text("Continue").click()
-        await terminal.get_by_text("Done").expect()
+        await terminal.run("market-terminal")
+        await terminal.get_by_text("MARKET").expect()
+        await terminal.get_by_text("DISCOVER").click()
+        await terminal.get_by_text("24h").expect()
 
 asyncio.run(main())
 ```
 
-[Python API reference](bindings/python/README.md)
-
-### JavaScript
+JavaScript:
 
 ```js
 import { Nasduck } from "@shiplaone2q/nasduck";
@@ -97,76 +247,63 @@ import { Nasduck } from "@shiplaone2q/nasduck";
 const terminal = Nasduck.ephemeral();
 
 try {
-  await terminal.run("my-app");
-  await terminal.getByText("Ready").expect();
-  await terminal.getByText("Continue").click();
-  await terminal.getByText("Done").expect();
+  await terminal.run("market-terminal");
+  await terminal.getByText("MARKET").expect();
+  await terminal.getByText("DISCOVER").click();
+  await terminal.getByText("24h").expect();
 } finally {
   await terminal.closeQuiet();
 }
 ```
 
-[JavaScript API reference](bindings/js/README.md)
-
-### Rust
+Rust:
 
 ```rust
 use nasduck::{OpenOptions, Operation, Session};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let terminal = Session::new("example");
+    let terminal = Session::new("market");
     terminal.open(OpenOptions::default())?;
     terminal.execute(Operation::Submit {
-        data: Some("echo hello".into()),
+        data: Some("market-terminal".into()),
     })?;
-    terminal.get_by_text("hello").last().expect()?;
+    terminal.get_by_text("MARKET").expect()?;
     terminal.close()?;
     Ok(())
 }
 ```
 
-[Rust API reference](https://docs.rs/nasduck-rs/latest/nasduck/)
-
-### Go
+Go:
 
 ```go
-package main
+terminal, err := nasduck.Ephemeral("market", nasduck.ClientOptions{})
+if err != nil {
+    log.Fatal(err)
+}
+defer terminal.CloseQuiet()
 
-import (
-    "log"
-
-    "github.com/shiplaone2q/nasduck/bindings/go"
-)
-
-func main() {
-    terminal, err := nasduck.Ephemeral("example", nasduck.ClientOptions{})
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer terminal.CloseQuiet()
-
-    if _, err := terminal.Run("my-app", nil, nasduck.SpawnOptions{}); err != nil {
-        log.Fatal(err)
-    }
-    if err := terminal.GetByText("Ready", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}); err != nil {
-        log.Fatal(err)
-    }
+if _, err := terminal.Run("market-terminal", nil, nasduck.SpawnOptions{}); err != nil {
+    log.Fatal(err)
+}
+if err := terminal.GetByText("MARKET", nasduck.TextSelectorOptions{}).Expect(nasduck.LocatorExpectOptions{}); err != nil {
+    log.Fatal(err)
 }
 ```
 
-[Go installation and API reference](bindings/go/README.md)
+<img src="https://i.imgur.com/ZYhev0d.png" alt="Market terminal" width="100%">
 
-## API references
+## Market terminal reference
 
-| Surface | Reference |
+### Screens
+
+| Screen | What it does |
 | --- | --- |
-| CLI | [CLI reference](#cli-reference) |
-| Rust | [docs.rs](https://docs.rs/nasduck-rs/latest/nasduck/) |
-| Python | [bindings/python/README.md](bindings/python/README.md) |
-| JavaScript | [bindings/js/README.md](bindings/js/README.md) |
-| Go | [bindings/go/README.md](bindings/go/README.md) |
-
-## CLI reference
+| `DISCOVER` | Live feed of recent launches, ordered by age, volume or momentum. |
+| `SEARCH` | Ticker and issuer lookup with fuzzy fallback. |
+| `BOOK` | Depth, spread, last, and the trade ticker for one token. |
+| `LAUNCH` | Token creation: ticker, supply, curve, description, image hash. |
+| `POSITIONS` | Open size, average entry, unrealized PnL, and exit buttons. |
+| `WALLET` | In-game balance, deposits, withdrawals and pending settlements. |
 
 ### Global options
 
@@ -176,11 +313,8 @@ func main() {
 | `--json` | Print JSON. |
 | `--verbose`, `-v` | Write a session log. |
 | `--failure-artifacts DIR` | Write structured assertion artifacts. |
-| `--failure-artifact-mode MODE` | Select `none`, `text`, `html`, or `all` (default when exports are enabled). |
-| `--failure-artifact-recording` | Copy the automatic cast through the failure boundary. |
-| `--diagnostic-context KEY=VALUE` | Add safe caller context to failure details. |
-
-CLI sessions persist between commands. `open` and `run` reuse a live session unless `--restart` is set.
+| `--failure-artifact-mode MODE` | Select `none`, `text`, `html` or `all`. |
+| `--diagnostic-context KEY=VALUE` | Attach caller context to failure details. |
 
 ### Sessions
 
@@ -188,87 +322,21 @@ CLI sessions persist between commands. `open` and `run` reuse a live session unl
 | --- | --- |
 | `open [options]` | Open a shell. |
 | `run [options] PROGRAM [ARGS...]` | Run a program. |
-| `[global options] -- PROGRAM [ARGS...]` | Alias for `run`. |
 | `restart [--graceful-timeout MS]` | Restart the session. |
 | `sessions` | List sessions. |
 | `close [--all]` | Close one or all sessions. |
-| `daemon start` | Start the session daemon. |
-| `daemon status` | Show daemon status. |
-| `daemon stop [--all]` | Stop one or all daemons. |
+| `daemon start` / `status` / `stop` | Manage the session daemon. |
 
-`open` and `run` accept `--backend`, `--cols`, `--rows`, `--cwd`, repeatable `--env KEY=VALUE`, `--wait-ready`, `--no-wait-ready`, `--restart`, `--config`, `--profile`, `--timeout-<class> MS`, and `--screen-history-limit COUNT`. `open` also accepts `--shell`.
+### Locators
 
-### Text locators
-
-```sh
+```console
 nasduck find text TEXT [options]
 nasduck expect text TEXT [options]
 nasduck click text TEXT [options]
 nasduck highlight text TEXT [options]
 ```
 
-| Command | Description |
-| --- | --- |
-| `find text` | Return current matches and cell spans. |
-| `expect text` | Retry until the locator passes. |
-| `click text` | Retry, then click the middle cell. |
-| `highlight text` | Mark matches in screenshots and the live monitor. |
-
-Locator options:
-
-| Option | Description |
-| --- | --- |
-| `--regex` | Treat `TEXT` as a regular expression. |
-| `--full` | Include scrollback. |
-| `--whitespace exact\|normalize` | Choose whitespace matching. |
-| `--after-text TEXT` | Search after an anchor. |
-| `--before-text TEXT` | Search before an anchor. |
-| `--after-regex`, `--before-regex` | Treat the anchor as a regular expression. |
-| `--after-match MODE`, `--before-match MODE` | Select an anchor with `any`, `unique`, `first`, or `last`. |
-| `--after-nth N`, `--before-nth N` | Select a zero-based anchor. |
-| `--match MODE` | Select `any`, `unique`, `first`, or `last`. |
-| `--nth N` | Select a zero-based match. |
-
-Style options are `--fg`, `--bg`, `--bold`, `--dim`, `--italic`, `--underline-style`, `--underline-color`, `--inverse`, `--hidden`, `--strikethrough`, and `--blink`. Boolean styles accept `=false`.
-
-`--link URI` separately requires every matched cell, including spaces, to
-have that OSC 8 target. `--link ""` requires no link.
-
-Programmatic locators add `getByLink()` / `get_by_link()`, cell-set
-intersection and union (`and`/`or` in Rust and JavaScript, `and_`/`or_` in
-Python), and locator-only `filter` containment. AND/OR form new contiguous
-per-row runs; filters preserve whole matches. See the
-[JavaScript](bindings/js/README.md#compose-locators) and
-[Python](bindings/python/README.md#compose-locators) composition examples.
-
-`expect text` also accepts `--not` and `--timeout MS`. `click text` accepts `--button left|middle|right`, `--alt`, `--ctrl`, `--shift`, `--clicks N`, and `--timeout MS`. `highlight text` accepts `--timeout MS`.
-
-### Keyboard and mouse
-
-| Command | Description |
-| --- | --- |
-| `submit [TEXT]` | Type text and press Enter. |
-| `type TEXT` | Type text. |
-| `write DATA` | Write raw bytes. |
-| `key press KEYS...` | Press keys. |
-| `key down KEYS...` | Send keydown events. |
-| `key repeat KEYS...` | Send repeat events. |
-| `key up KEYS...` | Send keyup events. |
-| `mouse click [X Y] [options]` | Click a cell or `--on-text TEXT`. |
-| `mouse move X Y` | Move the pointer. |
-| `mouse down X Y [options]` | Press a mouse button. |
-| `mouse up X Y [options]` | Release a mouse button. |
-| `mouse drag X1 Y1 X2 Y2 [options]` | Drag between cells. |
-| `mouse scroll up\|down [--amount N]` | Send mouse wheel input to the application. |
-| `scroll up\|down [LINES]` | Move the native history viewport; default: one row. |
-| `scroll top\|bottom` | Show the oldest output or return to the live screen. |
-| `resize COLS ROWS` | Resize the terminal. |
-| `signal INT\|TERM\|KILL\|QUIT` | Send a signal. |
-| `kill` | Kill the child process. |
-
-Mouse button actions accept `--button left|middle|right`, `--alt`, `--ctrl`, and `--shift`. Click also accepts `--clicks N`.
-
-Named keys include arrows, Home, End, PageUp, PageDown, Insert, Delete, Backspace, Tab, Enter, Space, Escape, and F1 through F12. Join modifiers such as Ctrl, Alt, Shift, Super, Meta, or Hyper with `+`.
+Locator options include `--regex`, `--full`, `--whitespace exact|normalize`, `--after-text`, `--before-text`, `--match any|unique|first|last` and `--nth N`. Style filters (`--fg`, `--bg`, `--bold`, `--inverse`, …) let you target a green bid row without matching its label. `expect text` also takes `--not` and `--timeout MS`.
 
 ### Read state
 
@@ -277,107 +345,32 @@ Named keys include arrows, Home, End, PageUp, PageDown, Insert, Delete, Backspac
 | `state` | Print session state and visible text. |
 | `text [--full]` | Print terminal text. |
 | `cells X Y [W H]` | Return cells and styles. |
-| `get command` | Return the last command. |
 | `get output` | Return the last command output. |
-| `get exit-code` | Return the last exit code. |
-| `get cwd` | Return the working directory. |
-| `get cursor` | Return the cursor position. |
-| `get viewport` | Return the history offset and available rows. |
-| `get size` | Return the terminal size. |
-| `get title` | Return the window title. |
 | `get clipboard` | Return the session clipboard. |
-| `get bells` | Return the bell count. |
-| `get bell-events` | Return bell events. |
-
-Native scrolling changes the visible viewport without mouse input to the application.
-New output preserves the historical view. Keyboard input returns to the live screen.
-Mouse input and historical locator clicks fail until you return to the live screen.
-Full-text reads remain independent of the viewport.
-See the [history reference](references/cli.md#native-history),
-[JavaScript example](bindings/js/examples/scrollback.mjs), and
-[Rust example](crates/nasduck/examples/scrollback.rs).
 
 ### Wait and assert
 
 | Command | Description |
 | --- | --- |
-| `wait title TEXT [--regex --not --timeout MS]` | Wait for a title. |
-| `wait clipboard [TEXT] [--regex --timeout MS]` | Wait for a clipboard change or match. |
-| `wait idle [--timeout MS]` | Wait for the screen to stop changing. |
-| `wait command [--timeout MS]` | Wait for a submitted command. |
-| `wait exit [--timeout MS]` | Wait for the program to exit. |
-| `wait ready [--timeout MS]` | Wait for a shell prompt. |
-| `wait bell [--timeout MS]` | Wait for a bell. |
-| `expect title TEXT [--regex --not --timeout MS]` | Assert the title. |
-| `expect exit-code CODE [--timeout MS]` | Assert the last exit code. |
-| `expect output TEXT [--regex]` | Assert command output. |
-| `expect bell COUNT [--timeout MS]` | Wait until the cumulative bell count reaches `COUNT`. |
-| `expect snapshot NAME [-u] [--include-style] [--include-title]` | Assert a snapshot. |
+| `wait idle` | Wait for the screen to stop changing. |
+| `wait ready` | Wait for the terminal prompt. |
+| `expect text TEXT` | Retry until the locator passes. |
+| `expect snapshot NAME` | Assert a stored snapshot. |
 
-Use `wait command` after `submit`, `wait exit` after `run`, and text locators for visible state. `wait idle` only means the screen stopped changing.
+## Configuration
 
-Timeout defaults:
-
-| Class | Default |
-| --- | --- |
-| `text` | 5 seconds |
-| `idle` | 5 seconds |
-| `command` | 30 seconds |
-| `exit` | 30 seconds |
-| `ready` | 30 seconds |
-
-### Capture
-
-| Command | Description |
-| --- | --- |
-| `screenshot [PATH] [-o PATH] [--full] [--zoom N] [--background COLOR \| --transparent]` | Print text or save SVG or PNG. |
-| `record start PATH [options] [--background COLOR \| --transparent]` | Start APNG, GIF, MP4, or asciinema recording. |
-| `record stop` | Finish the recording. |
-| `get-recording [SESSION] [--config PATH]` | Print the automatic asciinema recording. |
-| `monitor [--interactive]` | Watch a CLI session or send input with `--interactive`. |
-
-`record start` options: `--format`, `--fps`, `--speed`, `--idle-time-limit`, `--zoom`, `--background`, and `--transparent`. MP4 requires `ffmpeg` and does not support transparency. Cast recordings do not support canvas options.
-
-The extension selects the format: `.png` or `.apng`, `.gif`, `.mp4`, or `.cast`. `--format` overrides it.
-
-#### Record
-
-<p align="center">
-  <img alt="animated terminal recording created by nasduck" src="static/recording.gif" width="400">
-</p>
-
-| input | monitor |
-| :---: | :---: |
-| <img alt="nasduck commands controlling a terminal session" src="static/nasduck-demo-controller.gif" width="420"> | <img alt="nasduck monitor showing the controlled terminal session" src="static/nasduck-demo-monitor.gif" width="420"> |
-
-### Diagnostics / trace viewer
-
-Add the following to `nasduck.toml` to retain failed traces, or use `mode = "on"` to retain every trace.
+`nasduck.toml`, resolved from the current directory, then the platform config directory, then `~/.nasduck`. Override with `--config PATH` or `NASDUCK__CONFIG`.
 
 ```toml
-[trace]
-mode = "on-failure"
-directory = "./traces"
-```
+[psn]
+account = "bobblockhain"
+scopes = ["psn:identity", "psn:presence", "nasduck:market"]
 
-Users can open `trace.html` to review the trace or replay `session.cast`. Agents should read `trace.md` first and use `trace.json` and `timeline.json` for structured evidence instead of parsing the HTML.
-
-<p align="center">
-  <img alt="nasduck trace viewer showing a failed terminal assertion" src="static/trace-viewer.png">
-</p>
-
-### Configuration
-
-Create `nasduck.toml`:
-
-```toml
-[profiles.default]
-scrollback = 10000
-
-[profiles.default.colors]
-background = "#000000"
-foreground = "#c0c0c0"
-red = "#800000"
+[market]
+default_screen = "discover"
+quote = "usd"
+slippage_bps = 75
+confirm_over = 500
 
 [recording]
 directory = "./casts"
@@ -386,51 +379,53 @@ directory = "./casts"
 mode = "on-failure"
 directory = "./traces"
 
-[diagnostics]
-screen-history-limit = 10
-```
-
-Set the appearance of screenshots and recordings with `[recording.style]`:
-
-```toml
-[recording.style]
-font_size = 18
-canvas_background = "#05050a"
-canvas_padding = 30
-
-[recording.style.window]
-background = "#15151f"
-foreground = "#c8c8e0"
-divider = "#2a2a3a"
-
-[recording.style.border]
-width = 1
-color = "#3a3a52"
-radius = 12
+[profiles.default]
+scrollback = 10000
 
 [profiles.default.colors]
-background = "#0b0b12"
-foreground = "#d8d8e8"
+background = "#000000"
+foreground = "#c0c0c0"
+red = "#800000"
 ```
 
-<p align="center">
-  <img alt="nasduck drawn with a dark canvas, chrome and palette" src="static/style-midnight.svg" width="400">
-</p>
+`confirm_over` is the size above which the terminal requires a second confirmation — set it to `0` to confirm everything, or very high to skip prompts in automation.
 
-Profiles override individual keys and inherit the rest from the file.
-Failure SVGs and HTML report SVGs use the session style.
-See the [style types and defaults](crates/nasduck/src/render/style.rs) for all options.
-The [CLI reference](references/cli.md#styling-screenshots-and-recordings) explains profile overrides.
+## Recording, monitoring and traces
 
-The CLI checks the current directory, the platform config directory, then `~/.nasduck`. Use `--config PATH` or `NASDUCK__CONFIG` to select a file.
+Every session can be captured. Recordings are useful for bug reports, for stream overlays and for demo material.
 
-### Shells and backends
+```console
+$ nasduck record start run.gif --fps 20 --zoom 2
+$ nasduck record stop
+$ nasduck monitor --interactive
+```
 
-Shells: bash, zsh, fish, PowerShell, pwsh, cmd, xonsh, elvish, and nushell.
+Formats are picked from the extension: `.png`/`.apng`, `.gif`, `.mp4` or `.cast`. MP4 needs `ffmpeg` and has no transparency.
 
-Backends: Alacritty, Ghostty, Rio, and xterm.js. Default: Alacritty.
+Failures write a trace when `[trace] mode` is `"on-failure"`:
 
-### Exit codes
+```console
+$ nasduck --failure-artifacts ./artifacts expect text "POSITIONS"
+error: assertion failed after 5000ms
+  trace: ./artifacts/trace.md
+```
+
+Agents should read `trace.md` first, then `trace.json` and `timeline.json` for structured evidence. Humans can open `trace.html` or replay `session.cast`.
+
+![nasduck trace viewer showing a failed terminal assertion](static/trace-viewer.png)
+
+## Bindings
+
+All four bindings expose the same surface and share one native adapter. Sessions run in-process; none of them shell out to the CLI.
+
+| Surface | Reference |
+| --- | --- |
+| Rust | [docs.rs](https://docs.rs/nasduck-rs/latest/nasduck/) |
+| Python | [bindings/python/README.md](bindings/python/README.md) |
+| JavaScript | [bindings/js/README.md](bindings/js/README.md) |
+| Go | [bindings/go/README.md](bindings/go/README.md) |
+
+## Exit codes
 
 | Code | Meaning |
 | --- | --- |
@@ -441,37 +436,61 @@ Backends: Alacritty, Ghostty, Rio, and xterm.js. Default: Alacritty.
 | `4` | Daemon or IPC error |
 | `5` | Internal error |
 
-### Agent commands
+## Security model
 
-| Command | Description |
-| --- | --- |
-| `usage` | Print a short command guide. |
-| `agent-context` | Print the full command schema as JSON. |
-| `skill` | Print the complete agent guide. |
-| `skill --add` | Install the agent skill and local references. |
+- **No PSN password.** Device-code approval only; the engine holds a refresh token, not credentials.
+- **Local signing.** The per-session order key is derived locally and never transmitted.
+- **Minimal scopes.** Identity, presence, market. No friends list, no trophies, no store.
+- **Attach-only.** No patching, no injected DLLs, no modified game files.
+- **Revocable.** `nasduck psn unlink` kills the token and every outstanding session key.
+- **Bounded waits.** Every locator and every network call has a timeout; nothing blocks forever.
+
+## FAQ
+
+**Does this need a jailbreak or a modded console?**
+No. The engine attaches to the terminal bridge from a normal machine on the same network.
+
+**Will it get me banned?**
+It reads a surface the game already renders and talks to official endpoints. Treat it like a second controller, not a trainer.
+
+**Can I trade from a script?**
+Yes. The bindings expose the same locators the CLI uses, and `--json` gives you machine-readable output everywhere.
+
+**Does it work on PS5 and PS4?**
+The bridge is console-agnostic; anything that can host the terminal works.
+
+**Do I need the engine running to trade in-game?**
+No. The surface works on its own. The engine adds automation, recording and external tooling.
+
+**Multi-account?**
+One account per install. Keep separate config files and separate `--session` names.
+
+**Where do recordings and traces go?**
+Wherever `[recording] directory` and `[trace] directory` point. Nothing is uploaded.
+
+**The public API is in preview.**
+Limits and error codes can change; the changelog in the repository is authoritative.
+
+## Roadmap
+
+- [x] Market terminal surface and locators
+- [x] PSN device-code linking
+- [x] Recording, monitoring, structured traces
+- [ ] Limit orders and stop triggers
+- [ ] Portfolio screen with cost basis export
+- [ ] Webhook and websocket feed for external bots
+- [ ] Snapshot packs per screen for regression suites
+
+## Disclaimer
+
+NASDUCK is an unofficial fan project. Not affiliated with, endorsed by or sponsored by Rockstar Games or Sony Interactive Entertainment. GTA, Grand Theft Auto and PlayStation Network are trademarks of their respective owners. Tokens traded through NASDUCK are not securities and carry no expectation of profit.
+
+The hosted API is a preview surface and is provided as-is.
 
 ## Contributing
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+Issues and pull requests are welcome. Most contributions require agreeing to the CLA; the bot decorates your PR with what to do. This project follows the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
+## License
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-## Trademarks
-
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.
-
-
-```toml
-[[backend]]
-kind = "mlx"
-model = "mlx-community/Llama-3.2-3B"
-```
-
-## Status
-
-Actively developed. See the [releases](https://github.com/bobblockhain/nasduck-opensource/releases) page for the current build.
-## Status
-
-Actively developed. See the [releases](https://github.com/bobblockhain/nasduck-opensource/releases) page for the current build.
+[MIT](LICENSE)
