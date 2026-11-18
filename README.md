@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://i.imgur.com/w4HuCXH.png" alt="NASDUCK — memecoins in GTA 6" width="100%">
+
 # NASDUCK
 
 **Memecoin economy layer for GTA VI.**
@@ -13,31 +15,20 @@ Launch, discover, search, buy, sell and trade tokens from the in-game market ter
 
 [Website](https://nasduck.org/) · [Install](#installation) · [Link PSN](#linking-a-playstation-network-account) · [How it works](#how-it-works) · [CLI reference](#market-terminal-reference) · [FAQ](#faq)
 
-<img src="https://i.imgur.com/w4HuCXH.png" alt="NASDUCK — memecoin economy layer for GTA VI" width="100%">
-
 </div>
 
 ---
 
 ## Contents
 
-- [What NASDUCK is](#what-nasduck-is)
-- [The problem](#the-problem)
-- [How it works](#how-it-works)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Linking a PlayStation Network account](#linking-a-playstation-network-account)
-- [Quick start](#quick-start)
-- [Market terminal reference](#market-terminal-reference)
-- [Configuration](#configuration)
-- [Recording, monitoring and traces](#recording-monitoring-and-traces)
-- [Bindings](#bindings)
-- [Exit codes](#exit-codes)
-- [Security model](#security-model)
-- [FAQ](#faq)
-- [Roadmap](#roadmap)
-- [Disclaimer](#disclaimer)
-- [Contributing](#contributing)
+| | | |
+| --- | --- | --- |
+| [What NASDUCK is](#what-nasduck-is) | [The problem](#the-problem) | [How it works](#how-it-works) |
+| [Requirements](#requirements) | [Installation](#installation) | [Linking PSN](#linking-a-playstation-network-account) |
+| [Quick start](#quick-start) | [Terminal reference](#market-terminal-reference) | [Configuration](#configuration) |
+| [Recording and traces](#recording-monitoring-and-traces) | [Bindings](#bindings) | [Exit codes](#exit-codes) |
+| [Security model](#security-model) | [FAQ](#faq) | [Roadmap](#roadmap) |
+| [Disclaimer](#disclaimer) | [Contributing](#contributing) | [License](#license) |
 
 ---
 
@@ -48,8 +39,6 @@ Launch, discover, search, buy, sell and trade tokens from the in-game market ter
 NASDUCK brings a full memecoin economy into GTA VI. Players open the in-game market terminal, browse what launched in the last hour, search a ticker, read a book, buy, sell, take profit — and never touch a second screen.
 
 The market is not a companion app. It is a surface inside the game, and NASDUCK is the engine that drives it: it attaches to the terminal session, mirrors every cell of the screen, routes orders, settles balances, and exposes the whole thing to scripts, bots and desktop tools through one Rust core and four language bindings.
-
-Two halves, one product:
 
 | Half | What it is |
 | --- | --- |
@@ -62,9 +51,14 @@ You can drive the surface by hand in-game, or drive it from the CLI, or from Pyt
 
 Every memecoin venue built for a game so far has made the same mistake: it asked players to leave the game.
 
-Tab out, open a browser, connect a wallet, paste a contract, wait for a page to load, alt-tab back into a firefight. By the time you are back the launch is over. The economy exists, but it lives outside the thing it is supposed to be an economy *of*.
+| | Outside the game | Inside the game |
+| --- | --- | --- |
+| **Steps to a trade** | tab out, open browser, connect wallet, paste contract, wait for load | press one button |
+| **Time to first fill** | 20–40 seconds | under a second |
+| **Context** | lost — you were in a firefight | kept — same screen, same session |
+| **Failure mode** | stale page, wrong contract, dead link | none of the above |
 
-NASDUCK inverts that. The venue is a screen in the game. Discovery, search, price, book depth, position, exit — all of it is rendered by the game itself, in the game's own art direction, one button away from whatever the player was already doing.
+NASDUCK inverts the old shape. The venue is a screen in the game. Discovery, search, price, book depth, position, exit — all of it is rendered by the game itself, in the game's own art direction.
 
 That constraint is also what makes the engine interesting: to put a live market inside a terminal surface you need deterministic screen reads, retrying locators, snapshot assertions, structured failure traces and a recording format. Which is exactly what `nasduck` is.
 
@@ -72,23 +66,15 @@ That constraint is also what makes the engine interesting: to put a live market 
 
 ## How it works
 
-Four layers, each independently testable.
+Four layers, each independently testable, each with its own contract.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  4. SETTLEMENT                                               │
-│     order router · matching · balance ledger · token supply   │
-├──────────────────────────────────────────────────────────────┤
-│  3. IDENTITY                                                  │
-│     PSN link · per-session order key · entitlements           │
-├──────────────────────────────────────────────────────────────┤
-│  2. TRANSPORT                                                 │
-│     local bridge · cell grid · backend (alacritty/ghostty/    │
-│     rio/xterm.js) · PTY or LAN attach                         │
-├──────────────────────────────────────────────────────────────┤
-│  1. SURFACE                                                   │
-│     in-game market terminal · launch · book · positions       │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    X["4 · SETTLEMENT<br/>order router · matching · balance ledger · token supply"]
+    I["3 · IDENTITY<br/>PSN link · per-session order key · entitlements"]
+    T["2 · TRANSPORT<br/>local bridge · cell grid · backend attach · PTY or LAN"]
+    S["1 · SURFACE<br/>in-game market terminal · launch · book · positions"]
+    S --> T --> I --> X
 ```
 
 **1. Surface.** The market terminal is a real text-mode application rendered by the game. Because it is a cell grid and not a bitmap, every element — ticker, price, depth, size, button — is addressable. NASDUCK reads the grid, not pixels, so a reshade or a resolution change does not break anything.
@@ -112,10 +98,12 @@ Read [references/cli.md](references/cli.md) for the full surface contract.
 
 ## Requirements
 
-- **GTA VI**, with the market terminal unlocked (available after the in-game brokerage tutorial).
-- A **PlayStation Network account** in good standing, linked to the platform account you play on.
-- **Windows, Linux or macOS** to run the engine, on the same machine or on the same LAN as the console.
-- **Rust 1.90+** only if you build from source. Binaries and packages need nothing.
+| Requirement | Detail |
+| --- | --- |
+| Game | **GTA VI**, market terminal unlocked after the in-game brokerage tutorial |
+| Account | **PlayStation Network** account in good standing, linked to the account you play on |
+| Host | **Windows, Linux or macOS** — same machine or same LAN as the console |
+| Toolchain | **Rust 1.90+** only when building from source; binaries need nothing |
 
 Console support is attach-only: the engine never patches the game and never writes to game files.
 
@@ -123,26 +111,12 @@ Console support is attach-only: the engine never patches the game and never writ
 
 ### CLI
 
-Homebrew:
-
-```sh
-brew tap shiplaone2q/nasduck https://github.com/shiplaone2q/nasduck
-brew install nasduck
-```
-
-Install script — macOS and Linux:
-
-```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.sh | sh
-```
-
-Windows:
-
-```powershell
-irm https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.ps1 | iex
-```
-
-Or take a binary from [Releases](https://github.com/bobblockhain/nasduck-opensource/releases).
+| Platform | Command |
+| --- | --- |
+| Homebrew | `brew tap shiplaone2q/nasduck https://github.com/shiplaone2q/nasduck` then `brew install nasduck` |
+| macOS / Linux | `curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.sh \| sh` |
+| Windows | `irm https://raw.githubusercontent.com/shiplaone2q/nasduck/main/install/install.ps1 \| iex` |
+| Manual | binary from [Releases](https://github.com/bobblockhain/nasduck-opensource/releases) |
 
 ### Libraries
 
@@ -161,6 +135,23 @@ Add the Rust `recording-raster` feature for APNG, GIF and MP4 capture. Go, Pytho
 
 Linking is a one-time device-code flow. It takes about forty seconds and no password is ever entered into NASDUCK.
 
+```mermaid
+sequenceDiagram
+    participant P as Player
+    participant E as nasduck
+    participant B as Browser
+    participant N as PSN
+    P->>E: nasduck psn link
+    E->>P: short code + URL
+    P->>B: opens URL, confirms code
+    B->>N: approval on PSN side
+    N-->>E: approval lands
+    E->>E: exchange for refresh token, derive session key
+    E->>P: linked account, scopes, key fingerprint
+```
+
+1. **Run the command.** The engine prints a short code and the link URL, and opens the URL in your default browser when one is available.
+
 ```console
 $ nasduck psn link
 
@@ -170,7 +161,6 @@ $ nasduck psn link
   Waiting for approval...            (expires in 300s)
 ```
 
-1. **Run the command.** The engine prints a short code and the link URL. It also opens the URL in your default browser when one is available.
 2. **Approve on the PSN side.** Open the URL on your phone or console browser, sign in to PlayStation Network if you are not already, and confirm the code matches. The approval screen names the exact scopes being requested.
 3. **Confirm on the terminal.** The engine polls until the approval lands, then exchanges it for a refresh token and prints the resolved account:
 
@@ -187,8 +177,6 @@ $ nasduck psn status
 $ nasduck run market-terminal --wait-ready
 ```
 
-Useful subcommands:
-
 | Command | Description |
 | --- | --- |
 | `psn link` | Start the device-code flow. |
@@ -196,12 +184,12 @@ Useful subcommands:
 | `psn refresh` | Force a token refresh. |
 | `psn unlink` | Revoke the token and drop the session key. |
 
-Notes:
-
-- The refresh token is stored in the platform config directory with `0600`, or in the OS keychain when one is present.
-- Scopes are minimal: read identity, read presence (so the terminal knows when you are in-game), and market access.
-- One account per engine install. Multi-account setups need one config file per account — see [Configuration](#configuration).
-- Unlinking revokes server-side immediately and invalidates outstanding session keys.
+| Property | Value |
+| --- | --- |
+| Token storage | platform config directory, `0600`, or the OS keychain when present |
+| Scopes | `psn:identity`, `psn:presence`, `nasduck:market` |
+| Accounts per install | one; use separate config files and `--session` names for more |
+| Revocation | immediate and server-side, invalidates outstanding session keys |
 
 ## Quick start
 
@@ -329,14 +317,23 @@ if err := terminal.GetByText("MARKET", nasduck.TextSelectorOptions{}).Expect(nas
 
 ### Locators
 
-```console
-nasduck find text TEXT [options]
-nasduck expect text TEXT [options]
-nasduck click text TEXT [options]
-nasduck highlight text TEXT [options]
-```
+| Command | Purpose |
+| --- | --- |
+| `find text TEXT` | Return current matches and cell spans. |
+| `expect text TEXT` | Retry until the locator passes. |
+| `click text TEXT` | Retry, then click the middle cell. |
+| `highlight text TEXT` | Mark matches in screenshots and the live monitor. |
 
-Locator options include `--regex`, `--full`, `--whitespace exact|normalize`, `--after-text`, `--before-text`, `--match any|unique|first|last` and `--nth N`. Style filters (`--fg`, `--bg`, `--bold`, `--inverse`, …) let you target a green bid row without matching its label. `expect text` also takes `--not` and `--timeout MS`.
+| Locator option | Effect |
+| --- | --- |
+| `--regex` | Treat the text as a regular expression. |
+| `--full` | Include scrollback. |
+| `--whitespace exact\|normalize` | Choose whitespace matching. |
+| `--after-text`, `--before-text` | Search relative to an anchor. |
+| `--match any\|unique\|first\|last`, `--nth N` | Select among matches. |
+| `--fg`, `--bg`, `--bold`, `--inverse` | Filter by cell style. |
+
+`expect text` also accepts `--not` and `--timeout MS`.
 
 ### Read state
 
@@ -388,7 +385,13 @@ foreground = "#c0c0c0"
 red = "#800000"
 ```
 
-`confirm_over` is the size above which the terminal requires a second confirmation — set it to `0` to confirm everything, or very high to skip prompts in automation.
+| Key | Effect |
+| --- | --- |
+| `market.quote` | Quote currency for prices and PnL. |
+| `market.slippage_bps` | Slippage tolerance in basis points. |
+| `market.confirm_over` | Size above which a second confirmation is required; `0` confirms everything. |
+| `recording.directory` | Where recordings land. |
+| `trace.mode` | `off`, `on-failure` or `on`. |
 
 ## Recording, monitoring and traces
 
@@ -400,7 +403,12 @@ $ nasduck record stop
 $ nasduck monitor --interactive
 ```
 
-Formats are picked from the extension: `.png`/`.apng`, `.gif`, `.mp4` or `.cast`. MP4 needs `ffmpeg` and has no transparency.
+| Extension | Format | Note |
+| --- | --- | --- |
+| `.png`, `.apng` | still / animated PNG | transparency supported |
+| `.gif` | GIF | transparency supported |
+| `.mp4` | MP4 | needs `ffmpeg`, no transparency |
+| `.cast` | asciinema | no canvas options |
 
 Failures write a trace when `[trace] mode` is `"on-failure"`:
 
@@ -410,7 +418,11 @@ error: assertion failed after 5000ms
   trace: ./artifacts/trace.md
 ```
 
-Agents should read `trace.md` first, then `trace.json` and `timeline.json` for structured evidence. Humans can open `trace.html` or replay `session.cast`.
+| Artifact | Audience |
+| --- | --- |
+| `trace.md` | read this first |
+| `trace.json`, `timeline.json` | structured evidence for agents |
+| `trace.html`, `session.cast` | humans |
 
 ![nasduck trace viewer showing a failed terminal assertion](static/trace-viewer.png)
 
@@ -438,12 +450,14 @@ All four bindings expose the same surface and share one native adapter. Sessions
 
 ## Security model
 
-- **No PSN password.** Device-code approval only; the engine holds a refresh token, not credentials.
-- **Local signing.** The per-session order key is derived locally and never transmitted.
-- **Minimal scopes.** Identity, presence, market. No friends list, no trophies, no store.
-- **Attach-only.** No patching, no injected DLLs, no modified game files.
-- **Revocable.** `nasduck psn unlink` kills the token and every outstanding session key.
-- **Bounded waits.** Every locator and every network call has a timeout; nothing blocks forever.
+| Property | How it holds |
+| --- | --- |
+| Credentials | never stored — device-code approval, refresh token only |
+| Order signing | local, per session, key never transmitted |
+| Scopes | identity, presence, market — no friends, trophies or store |
+| Game files | untouched — attach-only, no patching, no injected DLLs |
+| Revocation | `nasduck psn unlink` kills the token and every session key |
+| Waits | every locator and network call is bounded by a timeout |
 
 ## FAQ
 
@@ -473,13 +487,15 @@ Limits and error codes can change; the changelog in the repository is authoritat
 
 ## Roadmap
 
-- [x] Market terminal surface and locators
-- [x] PSN device-code linking
-- [x] Recording, monitoring, structured traces
-- [ ] Limit orders and stop triggers
-- [ ] Portfolio screen with cost basis export
-- [ ] Webhook and websocket feed for external bots
-- [ ] Snapshot packs per screen for regression suites
+| State | Item |
+| --- | --- |
+| done | Market terminal surface and locators |
+| done | PSN device-code linking |
+| done | Recording, monitoring, structured traces |
+| next | Limit orders and stop triggers |
+| next | Portfolio screen with cost basis export |
+| later | Webhook and websocket feed for external bots |
+| later | Snapshot packs per screen for regression suites |
 
 ## Disclaimer
 
