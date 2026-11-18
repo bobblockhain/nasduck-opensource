@@ -2,10 +2,10 @@
 
 <img src="https://i.imgur.com/w4HuCXH.png" alt="NASDUCK — memecoins in GTA 6" width="100%">
 
-# NASDUCK
+<h1 align="center">NASDUCK</h1>
 
-**Memecoin economy layer for GTA VI.**
-Launch, discover, search, buy, sell and trade tokens from the in-game market terminal — without ever leaving the game.
+<p align="center"><b>Memecoin economy layer for GTA VI.</b><br>
+Launch, discover, search, buy, sell and trade tokens from the in-game market terminal — without ever leaving the game.</p>
 
 ![status](https://img.shields.io/badge/status-active-brightgreen)
 ![engine](https://img.shields.io/badge/engine-rust-orange)
@@ -13,13 +13,13 @@ Launch, discover, search, buy, sell and trade tokens from the in-game market ter
 ![psn](https://img.shields.io/badge/psn-account%20link%20required-003791)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 
-[Website](https://nasduck.org/) · [Install](#installation) · [Link PSN](#linking-a-playstation-network-account) · [How it works](#how-it-works) · [CLI reference](#market-terminal-reference) · [FAQ](#faq)
+<p align="center"><a href="https://nasduck.org/">Website</a> · <a href="#installation">Install</a> · <a href="#linking-a-playstation-network-account">Link PSN</a> · <a href="#how-it-works">How it works</a> · <a href="#market-terminal-reference">CLI reference</a> · <a href="#faq">FAQ</a></p>
 
 </div>
 
 ---
 
-## Contents
+<div align="center">
 
 | | | |
 | --- | --- | --- |
@@ -30,26 +30,34 @@ Launch, discover, search, buy, sell and trade tokens from the in-game market ter
 | [Security model](#security-model) | [FAQ](#faq) | [Roadmap](#roadmap) |
 | [Disclaimer](#disclaimer) | [Contributing](#contributing) | [License](#license) |
 
+</div>
+
 ---
+
+<div align="center">
 
 <img src="https://i.imgur.com/K0kyqOk.png" alt="Economy layer" width="100%">
 
-## What NASDUCK is
+<h2 align="center">What NASDUCK is</h2>
 
-NASDUCK brings a full memecoin economy into GTA VI. Players open the in-game market terminal, browse what launched in the last hour, search a ticker, read a book, buy, sell, take profit — and never touch a second screen.
+<p align="center">NASDUCK brings a full memecoin economy into GTA VI. Players open the in-game market terminal, browse what launched in the last hour, search a ticker, read a book, buy, sell, take profit — and never touch a second screen.</p>
 
-The market is not a companion app. It is a surface inside the game, and NASDUCK is the engine that drives it: it attaches to the terminal session, mirrors every cell of the screen, routes orders, settles balances, and exposes the whole thing to scripts, bots and desktop tools through one Rust core and four language bindings.
+<p align="center">The market is not a companion app. It is a surface inside the game, and NASDUCK is the engine that drives it: it attaches to the terminal session, mirrors every cell of the screen, routes orders, settles balances, and exposes the whole thing to scripts, bots and desktop tools through one Rust core and four language bindings.</p>
 
 | Half | What it is |
 | --- | --- |
 | **Surface** | The in-game market terminal — the native screen where players launch and trade. |
 | **Engine** | `nasduck` — the Rust runtime that attaches to the surface, resolves identity, routes orders, records and replays sessions, and exposes a stable API. |
 
-You can drive the surface by hand in-game, or drive it from the CLI, or from Python, JavaScript, Rust and Go. It is the same engine and the same session either way.
+<p align="center">You can drive the surface by hand in-game, or drive it from the CLI, or from Python, JavaScript, Rust and Go. It is the same engine and the same session either way.</p>
 
-## The problem
+</div>
 
-Every memecoin venue built for a game so far has made the same mistake: it asked players to leave the game.
+<div align="center">
+
+<h2 align="center">The problem</h2>
+
+<p align="center">Every memecoin venue built for a game so far has made the same mistake: it asked players to leave the game.</p>
 
 | | Outside the game | Inside the game |
 | --- | --- | --- |
@@ -58,15 +66,19 @@ Every memecoin venue built for a game so far has made the same mistake: it asked
 | **Context** | lost — you were in a firefight | kept — same screen, same session |
 | **Failure mode** | stale page, wrong contract, dead link | none of the above |
 
-NASDUCK inverts the old shape. The venue is a screen in the game. Discovery, search, price, book depth, position, exit — all of it is rendered by the game itself, in the game's own art direction.
+<p align="center">NASDUCK inverts the old shape. The venue is a screen in the game. Discovery, search, price, book depth, position, exit — all of it is rendered by the game itself, in the game's own art direction.</p>
 
-That constraint is also what makes the engine interesting: to put a live market inside a terminal surface you need deterministic screen reads, retrying locators, snapshot assertions, structured failure traces and a recording format. Which is exactly what `nasduck` is.
+<p align="center">That constraint is also what makes the engine interesting: to put a live market inside a terminal surface you need deterministic screen reads, retrying locators, snapshot assertions, structured failure traces and a recording format. Which is exactly what <code>nasduck</code> is.</p>
+
+</div>
+
+<div align="center">
 
 <img src="https://i.imgur.com/q9uQKct.png" alt="Four layers: surface, transport, identity, settlement" width="100%">
 
-## How it works
+<h2 align="center">How it works</h2>
 
-Four layers, each independently testable, each with its own contract.
+<p align="center">Four layers, each independently testable, each with its own contract.</p>
 
 ```mermaid
 flowchart TB
@@ -77,15 +89,17 @@ flowchart TB
     S --> T --> I --> X
 ```
 
-**1. Surface.** The market terminal is a real text-mode application rendered by the game. Because it is a cell grid and not a bitmap, every element — ticker, price, depth, size, button — is addressable. NASDUCK reads the grid, not pixels, so a reshade or a resolution change does not break anything.
+<p align="center"><b>1. Surface.</b> The market terminal is a real text-mode application rendered by the game. Because it is a cell grid and not a bitmap, every element — ticker, price, depth, size, button — is addressable. NASDUCK reads the grid, not pixels, so a reshade or a resolution change does not break anything.</p>
 
-**2. Transport.** A local bridge publishes the terminal as a session. The engine attaches to it with the configured backend and gets a normal session handle: rows, columns, cells, styles, cursor, title, scrollback. From that point the surface is indistinguishable from a shell.
+<p align="center"><b>2. Transport.</b> A local bridge publishes the terminal as a session. The engine attaches to it with the configured backend and gets a normal session handle: rows, columns, cells, styles, cursor, title, scrollback. From that point the surface is indistinguishable from a shell.</p>
 
-**3. Identity.** The terminal only serves a player it can name. Linking a PSN account binds the session to your identity, resolves your in-game wallet and derives a per-session order key. Orders are signed locally; the key never leaves your machine.
+<p align="center"><b>3. Identity.</b> The terminal only serves a player it can name. Linking a PSN account binds the session to your identity, resolves your in-game wallet and derives a per-session order key. Orders are signed locally; the key never leaves your machine.</p>
 
-**4. Settlement.** Orders hit the router, get matched against the book, and settle into the ledger. Token supply, launch curves and balances are engine state — the surface is only ever a view of it.
+<p align="center"><b>4. Settlement.</b> Orders hit the router, get matched against the book, and settle into the ledger. Token supply, launch curves and balances are engine state — the surface is only ever a view of it.</p>
 
-Nothing in the stack is fire-and-forget. Every wait is bounded, every assertion is retried, every failure produces an artifact:
+<p align="center">Nothing in the stack is fire-and-forget. Every wait is bounded, every assertion is retried, every failure produces an artifact:</p>
+
+</div>
 
 ```console
 $ nasduck run market-terminal
@@ -94,9 +108,11 @@ $ nasduck click text "DISCOVER"
 $ nasduck expect text "24h"
 ```
 
-Read [references/cli.md](references/cli.md) for the full surface contract.
+<p align="center">Read <a href="references/cli.md">references/cli.md</a> for the full surface contract.</p>
 
-## Requirements
+<div align="center">
+
+<h2 align="center">Requirements</h2>
 
 | Requirement | Detail |
 | --- | --- |
@@ -105,9 +121,11 @@ Read [references/cli.md](references/cli.md) for the full surface contract.
 | Host | **Windows, Linux or macOS** — same machine or same LAN as the console |
 | Toolchain | **Rust 1.90+** only when building from source; binaries need nothing |
 
-Console support is attach-only: the engine never patches the game and never writes to game files.
+<p align="center">Console support is attach-only: the engine never patches the game and never writes to game files.</p>
 
-## Installation
+<h2 align="center">Installation</h2>
+
+</div>
 
 ### CLI
 
@@ -127,13 +145,15 @@ Console support is attach-only: the engine never patches the game and never writ
 | Node 20+ | `npm install @shiplaone2q/nasduck` | [JavaScript API](bindings/js/README.md) |
 | Go 1.26+ | `go get github.com/shiplaone2q/nasduck/bindings/go@v0.1.1` | [Go API](bindings/go/README.md) |
 
-Add the Rust `recording-raster` feature for APNG, GIF and MP4 capture. Go, Python and JavaScript all go through one [native adapter crate](crates/nasduck-ffi/README.md); set `NASDUCK__NATIVE_LIBRARY` to pin a specific library.
+<p align="center">Add the Rust <code>recording-raster</code> feature for APNG, GIF and MP4 capture. Go, Python and JavaScript all go through one <a href="crates/nasduck-ffi/README.md">native adapter crate</a>; set <code>NASDUCK__NATIVE_LIBRARY</code> to pin a specific library.</p>
+
+<div align="center">
 
 <img src="https://i.imgur.com/tedUein.png" alt="Link PSN — device code approval" width="100%">
 
-## Linking a PlayStation Network account
+<h2 align="center">Linking a PlayStation Network account</h2>
 
-Linking is a one-time device-code flow. It takes about forty seconds and no password is ever entered into NASDUCK.
+<p align="center">Linking is a one-time device-code flow. It takes about forty seconds and no password is ever entered into NASDUCK.</p>
 
 ```mermaid
 sequenceDiagram
@@ -150,7 +170,9 @@ sequenceDiagram
     E->>P: linked account, scopes, key fingerprint
 ```
 
-1. **Run the command.** The engine prints a short code and the link URL, and opens the URL in your default browser when one is available.
+<p align="center"><b>1. Run the command.</b> The engine prints a short code and the link URL, and opens the URL in your default browser when one is available.</p>
+
+</div>
 
 ```console
 $ nasduck psn link
@@ -161,8 +183,13 @@ $ nasduck psn link
   Waiting for approval...            (expires in 300s)
 ```
 
-2. **Approve on the PSN side.** Open the URL on your phone or console browser, sign in to PlayStation Network if you are not already, and confirm the code matches. The approval screen names the exact scopes being requested.
-3. **Confirm on the terminal.** The engine polls until the approval lands, then exchanges it for a refresh token and prints the resolved account:
+<div align="center">
+
+<p align="center"><b>2. Approve on the PSN side.</b> Open the URL on your phone or console browser, sign in to PlayStation Network if you are not already, and confirm the code matches. The approval screen names the exact scopes being requested.</p>
+
+<p align="center"><b>3. Confirm on the terminal.</b> The engine polls until the approval lands, then exchanges it for a refresh token and prints the resolved account:</p>
+
+</div>
 
 ```console
   Linked: bobblockhain (PSN ID)
@@ -170,7 +197,11 @@ $ nasduck psn link
   Key:    ed25519:9f2c…a71b  (session only)
 ```
 
-4. **Attach the console.** With the account linked, the bridge accepts the terminal session:
+<div align="center">
+
+<p align="center"><b>4. Attach the console.</b> With the account linked, the bridge accepts the terminal session:</p>
+
+</div>
 
 ```console
 $ nasduck psn status
@@ -191,7 +222,11 @@ $ nasduck run market-terminal --wait-ready
 | Accounts per install | one; use separate config files and `--session` names for more |
 | Revocation | immediate and server-side, invalidates outstanding session keys |
 
-## Quick start
+<div align="center">
+
+<h2 align="center">Quick start</h2>
+
+</div>
 
 ```console
 $ nasduck run market-terminal
@@ -201,7 +236,7 @@ $ nasduck find text "$" --full
 $ nasduck screenshot -o discovery.svg
 ```
 
-Launching a token, from the terminal or from code:
+<p align="center">Launching a token, from the terminal or from code:</p>
 
 ```console
 $ nasduck click text "LAUNCH"
@@ -211,7 +246,7 @@ $ nasduck submit "1000000"
 $ nasduck click text "CONFIRM"
 ```
 
-The same flow in Python:
+<p align="center">The same flow in Python:</p>
 
 ```python
 import asyncio
@@ -227,7 +262,7 @@ async def main():
 asyncio.run(main())
 ```
 
-JavaScript:
+<p align="center">JavaScript:</p>
 
 ```js
 import { Nasduck } from "@shiplaone2q/nasduck";
@@ -244,7 +279,7 @@ try {
 }
 ```
 
-Rust:
+<p align="center">Rust:</p>
 
 ```rust
 use nasduck::{OpenOptions, Operation, Session};
@@ -261,7 +296,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-Go:
+<p align="center">Go:</p>
 
 ```go
 terminal, err := nasduck.Ephemeral("market", nasduck.ClientOptions{})
@@ -278,9 +313,13 @@ if err := terminal.GetByText("MARKET", nasduck.TextSelectorOptions{}).Expect(nas
 }
 ```
 
+<div align="center">
+
 <img src="https://i.imgur.com/ZYhev0d.png" alt="Market terminal" width="100%">
 
-## Market terminal reference
+<h2 align="center">Market terminal reference</h2>
+
+</div>
 
 ### Screens
 
@@ -333,7 +372,7 @@ if err := terminal.GetByText("MARKET", nasduck.TextSelectorOptions{}).Expect(nas
 | `--match any\|unique\|first\|last`, `--nth N` | Select among matches. |
 | `--fg`, `--bg`, `--bold`, `--inverse` | Filter by cell style. |
 
-`expect text` also accepts `--not` and `--timeout MS`.
+<p align="center"><code>expect text</code> also accepts <code>--not</code> and <code>--timeout MS</code>.</p>
 
 ### Read state
 
@@ -354,9 +393,13 @@ if err := terminal.GetByText("MARKET", nasduck.TextSelectorOptions{}).Expect(nas
 | `expect text TEXT` | Retry until the locator passes. |
 | `expect snapshot NAME` | Assert a stored snapshot. |
 
-## Configuration
+<div align="center">
 
-`nasduck.toml`, resolved from the current directory, then the platform config directory, then `~/.nasduck`. Override with `--config PATH` or `NASDUCK__CONFIG`.
+<h2 align="center">Configuration</h2>
+
+<p align="center"><code>nasduck.toml</code>, resolved from the current directory, then the platform config directory, then <code>~/.nasduck</code>. Override with <code>--config PATH</code> or <code>NASDUCK__CONFIG</code>.</p>
+
+</div>
 
 ```toml
 [psn]
@@ -393,9 +436,13 @@ red = "#800000"
 | `recording.directory` | Where recordings land. |
 | `trace.mode` | `off`, `on-failure` or `on`. |
 
-## Recording, monitoring and traces
+<div align="center">
 
-Every session can be captured. Recordings are useful for bug reports, for stream overlays and for demo material.
+<h2 align="center">Recording, monitoring and traces</h2>
+
+<p align="center">Every session can be captured. Recordings are useful for bug reports, for stream overlays and for demo material.</p>
+
+</div>
 
 ```console
 $ nasduck record start run.gif --fps 20 --zoom 2
@@ -410,7 +457,7 @@ $ nasduck monitor --interactive
 | `.mp4` | MP4 | needs `ffmpeg`, no transparency |
 | `.cast` | asciinema | no canvas options |
 
-Failures write a trace when `[trace] mode` is `"on-failure"`:
+<p align="center">Failures write a trace when <code>[trace] mode</code> is <code>"on-failure"</code>:</p>
 
 ```console
 $ nasduck --failure-artifacts ./artifacts expect text "POSITIONS"
@@ -424,11 +471,13 @@ error: assertion failed after 5000ms
 | `trace.json`, `timeline.json` | structured evidence for agents |
 | `trace.html`, `session.cast` | humans |
 
-![nasduck trace viewer showing a failed terminal assertion](static/trace-viewer.png)
+<img src="https://i.imgur.com/PLACEHOLDER.png" alt="nasduck trace viewer showing a failed terminal assertion" width="100%">
 
-## Bindings
+<div align="center">
 
-All four bindings expose the same surface and share one native adapter. Sessions run in-process; none of them shell out to the CLI.
+<h2 align="center">Bindings</h2>
+
+<p align="center">All four bindings expose the same surface and share one native adapter. Sessions run in-process; none of them shell out to the CLI.</p>
 
 | Surface | Reference |
 | --- | --- |
@@ -437,7 +486,7 @@ All four bindings expose the same surface and share one native adapter. Sessions
 | JavaScript | [bindings/js/README.md](bindings/js/README.md) |
 | Go | [bindings/go/README.md](bindings/go/README.md) |
 
-## Exit codes
+<h2 align="center">Exit codes</h2>
 
 | Code | Meaning |
 | --- | --- |
@@ -448,7 +497,7 @@ All four bindings expose the same surface and share one native adapter. Sessions
 | `4` | Daemon or IPC error |
 | `5` | Internal error |
 
-## Security model
+<h2 align="center">Security model</h2>
 
 | Property | How it holds |
 | --- | --- |
@@ -459,33 +508,33 @@ All four bindings expose the same surface and share one native adapter. Sessions
 | Revocation | `nasduck psn unlink` kills the token and every session key |
 | Waits | every locator and network call is bounded by a timeout |
 
-## FAQ
+<h2 align="center">FAQ</h2>
 
-**Does this need a jailbreak or a modded console?**
-No. The engine attaches to the terminal bridge from a normal machine on the same network.
+<p align="center"><b>Does this need a jailbreak or a modded console?</b><br>
+No. The engine attaches to the terminal bridge from a normal machine on the same network.</p>
 
-**Will it get me banned?**
-It reads a surface the game already renders and talks to official endpoints. Treat it like a second controller, not a trainer.
+<p align="center"><b>Will it get me banned?</b><br>
+It reads a surface the game already renders and talks to official endpoints. Treat it like a second controller, not a trainer.</p>
 
-**Can I trade from a script?**
-Yes. The bindings expose the same locators the CLI uses, and `--json` gives you machine-readable output everywhere.
+<p align="center"><b>Can I trade from a script?</b><br>
+Yes. The bindings expose the same locators the CLI uses, and <code>--json</code> gives you machine-readable output everywhere.</p>
 
-**Does it work on PS5 and PS4?**
-The bridge is console-agnostic; anything that can host the terminal works.
+<p align="center"><b>Does it work on PS5 and PS4?</b><br>
+The bridge is console-agnostic; anything that can host the terminal works.</p>
 
-**Do I need the engine running to trade in-game?**
-No. The surface works on its own. The engine adds automation, recording and external tooling.
+<p align="center"><b>Do I need the engine running to trade in-game?</b><br>
+No. The surface works on its own. The engine adds automation, recording and external tooling.</p>
 
-**Multi-account?**
-One account per install. Keep separate config files and separate `--session` names.
+<p align="center"><b>Multi-account?</b><br>
+One account per install. Keep separate config files and separate <code>--session</code> names.</p>
 
-**Where do recordings and traces go?**
-Wherever `[recording] directory` and `[trace] directory` point. Nothing is uploaded.
+<p align="center"><b>Where do recordings and traces go?</b><br>
+Wherever <code>[recording] directory</code> and <code>[trace] directory</code> point. Nothing is uploaded.</p>
 
-**The public API is in preview.**
-Limits and error codes can change; the changelog in the repository is authoritative.
+<p align="center"><b>The public API is in preview.</b><br>
+Limits and error codes can change; the changelog in the repository is authoritative.</p>
 
-## Roadmap
+<h2 align="center">Roadmap</h2>
 
 | State | Item |
 | --- | --- |
@@ -497,16 +546,18 @@ Limits and error codes can change; the changelog in the repository is authoritat
 | later | Webhook and websocket feed for external bots |
 | later | Snapshot packs per screen for regression suites |
 
-## Disclaimer
+<h2 align="center">Disclaimer</h2>
 
-NASDUCK is an unofficial fan project. Not affiliated with, endorsed by or sponsored by Rockstar Games or Sony Interactive Entertainment. GTA, Grand Theft Auto and PlayStation Network are trademarks of their respective owners. Tokens traded through NASDUCK are not securities and carry no expectation of profit.
+<p align="center">NASDUCK is an unofficial fan project. Not affiliated with, endorsed by or sponsored by Rockstar Games or Sony Interactive Entertainment. GTA, Grand Theft Auto and PlayStation Network are trademarks of their respective owners. Tokens traded through NASDUCK are not securities and carry no expectation of profit.</p>
 
-The hosted API is a preview surface and is provided as-is.
+<p align="center">The hosted API is a preview surface and is provided as-is.</p>
 
-## Contributing
+<h2 align="center">Contributing</h2>
 
-Issues and pull requests are welcome. Most contributions require agreeing to the CLA; the bot decorates your PR with what to do. This project follows the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+<p align="center">Issues and pull requests are welcome. Most contributions require agreeing to the CLA; the bot decorates your PR with what to do. This project follows the <a href="https://opensource.microsoft.com/codeofconduct/">Microsoft Open Source Code of Conduct</a>.</p>
 
-## License
+<h2 align="center">License</h2>
 
-[MIT](LICENSE)
+<p align="center"><a href="LICENSE">MIT</a></p>
+
+</div>
